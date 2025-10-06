@@ -47,5 +47,29 @@ class Productos:
         else:
             print("El campo no puede estar vacio")
 
+class Cliente:
+    def __init__(self, nit, nombre, productos, total):
+        self.__nit = nit
+        self.__nombre = nombre
+        self.productos = productos
+        self.__total = total
 
+    @property
+    def nit(self):
+        return self.__nit
+
+    @property
+    def nombre(self):
+        return self.__nombre
+
+    @property
+    def total(self):
+        return self.__total
+
+    @total.setter
+    def total(self, new_total):
+        if new_total:
+            self.__total = new_total
+        else:
+            print("El campo no puede estar vacio")
 
