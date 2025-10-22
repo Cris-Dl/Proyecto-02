@@ -34,7 +34,19 @@ class App(tk.Tk):
         self.entry_existencia = ttk.Entry(frame_left)
         self.entry_existencia.pack(fill='x')
 
+        buton=tk.Button(frame_left, text="Guardar", bg="#2779F5", command=lambda:self.tab_productos.destroy())  #ERROR
+        buton.place(x=10, y=130,)
+
+    def ventas(self):
+        frame=ttk.Frame(self.tab_ventas, padding=10)
+        frame.pack(side="right", fill="y")
+
+        ttk.Label(frame, text="Reporte").pack(anchor='w')
+
+ventana=tk.Tk()
+ventana.title("PRUEBA")
+
 if __name__ == "__main__":
     app = App()
     app.mainloop()
-
+    ventana.mainloop()
