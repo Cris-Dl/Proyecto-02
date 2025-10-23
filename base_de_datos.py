@@ -81,7 +81,7 @@ class ProductosDB:
         print(f"Productos '{producto.nombre}' guardado con éxito.")
 
     @staticmethod
-    def ver_productos():
+    def ver_productos(): #Cambiar el modo de visualizar
         with ProductosDB._conn() as conn:
             cur = conn.execute("SELECT * FROM productos")
             filas = cur.fetchall()
