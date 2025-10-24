@@ -5,7 +5,7 @@ from tkinter import messagebox
 class Login:
     def __init__(self, root):
         self.root=root
-        self.root.title("TIENDITA SIN NOMBRE")
+        self.root.title("MINIMARKET")
         self.root.geometry("900x500")
         self.root.configure(bg="#1E90FF")
         self.root.resizable(False, False)
@@ -18,18 +18,18 @@ class Login:
         self.panel_left=tk.Frame(self.root, bg=self.COLOR_FONDO, width=400, height=500)
         self.panel_left.pack(side="left", fill="y")
 
-        self.titulo=tk.Label(self.panel_left, text="TIENDITA SIN NOMBRE", font=("Arial", 18, "bold"), bg=self.COLOR_FONDO, fg="white")
-        self.titulo.place(x=50, y=100)
+        self.titulo=tk.Label(self.panel_left, text="BIENVENIDO", font=("Arial", 27, "bold"), bg=self.COLOR_FONDO, fg="black")
+        self.titulo.place(x=105, y=140)
 
-        self.imagen=tk.PhotoImage(file="Logo2.png")
+        self.imagen=tk.PhotoImage(file="1.png")
         self.label_logo=tk.Label(self.panel_left, image=self.imagen, bg=self.COLOR_FONDO)
-        self.label_logo.place(x=100, y=200)
+        self.label_logo.place(x=20, y=200)
 
         self.panel_rigth=tk.Frame(self.root, bg=self.COLOR_BLANCO, width=500, height=500)
         self.panel_rigth.pack(side="right", fill="both", expand=True)
 
-        self.titulo2=tk.Label(self.panel_rigth, text="BIENVENIDO", font=("Arial", 22,"bold"), bg=self.COLOR_BLANCO, fg="#333333")
-        self.titulo2.place(x=167, y=60)
+        self.titulo2=tk.Label(self.panel_rigth, text="INICIO DE SESIÓN", font=("Arial", 22,"bold"), bg=self.COLOR_BLANCO, fg="#333333")
+        self.titulo2.place(x=130, y=60)
 
         tk.Label(self.panel_rigth, text="USUARIO", font=("Arial", 10), bg=self.COLOR_BLANCO).place(x=150,y=160)
         self.entry_user=tk.Entry(self.panel_rigth, width=30, bg=self.COLOR_INPUT,relief="flat", font=("Arial", 10))
@@ -51,12 +51,12 @@ class Login:
             app2=App()
             app2.mainloop()
         else:
-            messagebox.showerror("Error en sus credenciales, inténtelo de nuevo.")
+            messagebox.showerror("ERROR","Error en sus credenciales, inténtelo de nuevo.")
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Tiendita")
+        self.title("MiniMarket")
         self.geometry("900x600")
         self.resizable(True, True)
 
