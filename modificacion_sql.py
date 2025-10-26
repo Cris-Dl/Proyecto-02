@@ -80,21 +80,24 @@ class ProductosDB:
             )
         print(f"Productos '{producto.nombre}' guardado con éxito.")
 
-
-
     @staticmethod
-    def eliminar_producto():
-        codigo = input("Ingrese el codigo del producto a eliminar eliminar: ")
+    def obtener_por_codigo(codigo: str):
         with ProductosDB._conn() as conn:
-            cur = conn.execute("DELETE FROM productos WHERE codigo = ?", (codigo,))
-            if cur.rowcount == 0:
-                print("No se encontró el producto.")
-            else:
-                print("Producto eliminado con éxito.")
+            cur = conn.execute("SELECT * FROM productos WHERE codigo = ?", (codigo,))
+            return cur.fetchone()
 
     @staticmethod
-    def consultar_producto():
-        consulta = input("Ingrese la categoria a buscar: ")
+    def buscar_por_cadena(cadena: str):
+        patron = '%' + cadena + '%'
+        with ProductosDB._conn() as conn:
+            cur = conn.execute(
+                "SELECT nombre, codigo FROM productos WHERE nombre LIKE ? OR codigo LIKE ? LIMIT 10",
+                (patron, patron)
+            )
+            return cur.fetchall()
+
+
+
 
 
 while True:
