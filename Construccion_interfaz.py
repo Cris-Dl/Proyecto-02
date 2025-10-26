@@ -60,31 +60,78 @@ class App(tk.Tk):
         self.geometry("1200x600")
         self.resizable(True,True)
         self.configure(bg="#FFFFFF")
+        self.COLOR_FONDO = "#1E90FF"
+        self.COLOR_BOTON = "#007BFF"
+        self.COLOR_SELECCION = "#0056b3"
 
         self.panel_left = tk.Frame(self, bg="#1E90FF", width=200, height=500)
         self.panel_left.pack(side="left", fill="y")
+
+        self.panel_right= tk.Frame(self, bg="#FFFFFF")
+        self.panel_right.pack(side="right", fill="both", expand=True)
 
         self.imagen = tk.PhotoImage(file="2.png")
         self.label_logo = tk.Label(self.panel_left, image=self.imagen, bg="#1E90FF")
         self.label_logo.place(x=10, y=20)
 
-        self.button_ventas=tk.Button(self.panel_left, text="VENTAS", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25)
+        self.button_ventas=tk.Button(self.panel_left, text="VENTAS", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_ventas)
         self.button_ventas.place(x=0, y=150, height=35)
 
-        self.button_buscar_venta = tk.Button(self.panel_left, text="BUSCAR VENTA", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25)
+        self.button_buscar_venta = tk.Button(self.panel_left, text="BUSCAR VENTA", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_buscar_venta)
         self.button_buscar_venta.place(x=0, y=220, height=35)
 
-        self.button_inventario = tk.Button(self.panel_left, text="INVENTARIO", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25)
+        self.button_inventario = tk.Button(self.panel_left, text="INVENTARIO", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_inventario)
         self.button_inventario.place(x=0, y=290, height=35)
 
-        self.button_proveedores = tk.Button(self.panel_left, text="PROVEEDORES", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25)
+        self.button_proveedores = tk.Button(self.panel_left, text="PROVEEDORES", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_proveedores)
         self.button_proveedores.place(x=0, y=360, height=35)
 
-        self.button_reportes = tk.Button(self.panel_left, text="REPORTES", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25)
+        self.button_reportes = tk.Button(self.panel_left, text="REPORTES", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_reportes)
         self.button_reportes.place(x=0, y=430, height=35)
 
-        self.button_close= tk.Button(self.panel_left, text="CERRAR SESIÓN", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25)
+        self.button_close= tk.Button(self.panel_left, text="CERRAR SESIÓN", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25, command=self.cerrar_sesion)
         self.button_close.place(x=0, y=550, height=35)
+
+        self.botones=[self.button_ventas, self.button_buscar_venta, self.button_inventario, self.button_proveedores, self.button_reportes]
+
+    def activar_boton(self, boton):
+        boton.config(bg=self.COLOR_SELECCION)
+
+    def limpiar_panel(self):
+        for widget in self.panel_right.winfo_children():
+            widget.destroy()
+
+    def mostrar_ventas(self):
+        self.activar_boton(self.button_ventas)
+        self.limpiar_panel()
+        tk.Label(self.panel_right, text="Sección de Ventas", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=50)
+
+    def mostrar_buscar_venta(self):
+        self.activar_boton(self.button_buscar_venta)
+        self.limpiar_panel()
+        tk.Label(self.panel_right, text="Buscar Venta", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=50)
+
+    def mostrar_inventario(self):
+        self.activar_boton(self.button_inventario)
+        self.limpiar_panel()
+        tk.Label(self.panel_right, text="Inventario de Productos", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=50)
+
+    def mostrar_proveedores(self):
+        self.activar_boton(self.button_proveedores)
+        self.limpiar_panel()
+        tk.Label(self.panel_right, text="Gestión de Proveedores", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=50)
+
+    def mostrar_reportes(self):
+        self.activar_boton(self.button_reportes)
+        self.limpiar_panel()
+        tk.Label(self.panel_right, text="Reportes del Sistema", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=50)
+
+    def cerrar_sesion(self):
+        self.activar_boton(self.button_close)
+        self.destroy()
+        root = tk.Tk()
+        Login(root)
+        root.mainloop()
 
 
 if __name__ == "__main__":
