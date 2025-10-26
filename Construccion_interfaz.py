@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import ttk
 from tkinter import messagebox
 
 class Login:
@@ -63,6 +62,7 @@ class App(tk.Tk):
         self.COLOR_FONDO = "#1E90FF"
         self.COLOR_BOTON = "#007BFF"
         self.COLOR_SELECCION = "#0056b3"
+        self.protocol("WM_DELETE_WINDOW", self.cerrar_sesion)
 
         self.panel_left = tk.Frame(self, bg="#1E90FF", width=200, height=500)
         self.panel_left.pack(side="left", fill="y")
@@ -73,6 +73,7 @@ class App(tk.Tk):
         self.imagen = tk.PhotoImage(file="2.png")
         self.label_logo = tk.Label(self.panel_left, image=self.imagen, bg="#1E90FF")
         self.label_logo.place(x=10, y=20)
+        self.label_logo.bind("<Button-1>", self.mostrar_menu_principal)
 
         self.button_ventas=tk.Button(self.panel_left, text="VENTAS", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_ventas)
         self.button_ventas.place(x=0, y=150, height=35)
@@ -94,12 +95,22 @@ class App(tk.Tk):
 
         self.botones=[self.button_ventas, self.button_buscar_venta, self.button_inventario, self.button_proveedores, self.button_reportes]
 
+        self.mostrar_menu_principal()
     def activar_boton(self, boton):
+        for b in self.botones:
+            b.config(bg=self.COLOR_BOTON)
         boton.config(bg=self.COLOR_SELECCION)
 
     def limpiar_panel(self):
         for widget in self.panel_right.winfo_children():
             widget.destroy()
+
+    def mostrar_menu_principal(self, event=None):
+        self.limpiar_panel()
+        tk.Label(self.panel_right, text="MENÚ PRINCIPAL", font=("Arial", 22, "bold"), bg="#FFFFFF").pack(pady=50)
+        tk.Label(self.panel_right, text="¡Bienvenido al MiniMarket!", font=("Arial", 16), bg="#FFFFFF").pack(pady=20)
+        for b in self.botones:
+            b.config(bg=self.COLOR_BOTON)
 
     def mostrar_ventas(self):
         self.activar_boton(self.button_ventas)
@@ -114,7 +125,19 @@ class App(tk.Tk):
     def mostrar_inventario(self):
         self.activar_boton(self.button_inventario)
         self.limpiar_panel()
-        tk.Label(self.panel_right, text="Inventario de Productos", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=50)
+        tk.Label(self.panel_right, text="Inventario de Productos", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=15)
+
+        panel_buttons = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_buttons.pack(pady=0)
+
+        button_agregar = tk.Button(panel_buttons, text="AGREGAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25)
+        button_agregar.grid(row=0, column=0, padx=10)
+
+        button_editar=tk.Button(panel_buttons, text="EDITAR PRODUCTO", bg=self.COLOR_BOTON, fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", width=25)
+        button_editar.grid(row=0, column=1, padx=10)
+
+        linea = tk.Frame(self.panel_right, bg="gray", height=2)
+        linea.pack(fill="x", padx=0, pady=20)
 
     def mostrar_proveedores(self):
         self.activar_boton(self.button_proveedores)
@@ -127,13 +150,12 @@ class App(tk.Tk):
         tk.Label(self.panel_right, text="Reportes del Sistema", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=50)
 
     def cerrar_sesion(self):
-        self.activar_boton(self.button_close)
-        self.destroy()
-        root = tk.Tk()
-        Login(root)
-        root.mainloop()
-
-
+        respuesta = messagebox.askyesno("Confirmación", "¿Está seguro que desea salir?")
+        if respuesta:
+            self.destroy()
+            root = tk.Tk()
+            Login(root)
+            root.mainloop()
 if __name__ == "__main__":
     root=tk.Tk()
     app=Login(root)
