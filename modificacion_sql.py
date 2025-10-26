@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 DB_NAME = "productos.db"
 
@@ -58,6 +59,7 @@ class ProductosDB:
     def _conn():
         conn = sqlite3.connect(ProductosDB.DB_NAME)
         conn.row_factory = sqlite3.Row
+        #Tabla de productos
         conn.execute("""
                 CREATE TABLE IF NOT EXISTS productos (
                     id_num INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,6 +68,16 @@ class ProductosDB:
                     precio REAL,
                     categoria TEXT NOT NULL,
                     cantidad REAL
+                );
+            """)
+
+        # Tabla de Ventas
+        conn.execute("""
+                CREATE TABLE IF NOT EXISTS ventas (
+                    id_venta INTEGER PRIMARY KEY AUTOINCREMENT,
+                    fecha_venta TEXT NOT NULL,
+                    total_venta REAL NOT NULL,
+                    detalle_productos TEXT 
                 );
             """)
         conn.commit()
@@ -96,26 +108,17 @@ class ProductosDB:
             )
             return cur.fetchall()
 
+    @staticmethod
+    def registrar_venta(total: float, detalle_productos: list):
+        fecha_actual = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        detalle_str = " | ".join(detalle_productos)
+        with ProductosDB._conn() as conn:
+            conn.execute(
+                "INSERT INTO ventas (fecha_venta, total_venta, detalle_productos) VALUES (?, ?, ?)",
+                (fecha_actual, total, detalle_str)
+            )
+            conn.commit()
+        print(f"Venta registrada: Total ${total:.2f}")
 
 
 
-
-while True:
-    print("---Menú----")
-    print("1.- Registrar producto")
-    print("2.- Ver productos")
-    print("3.- Eliminar producto")
-    menu_option = input("Ingrese el número de la opción que quiera realizar: ")
-    print()
-    match menu_option:
-        case "1":
-            print("Registrar producto")
-            ProductosDB.registrar_producto()
-            print()
-        case "2":
-            print("Ver productos")
-            ProductosDB.ver_productos()
-            print()
-        case "3":
-            print("Eliminar producto")
-            ProductosDB.elim
