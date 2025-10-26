@@ -57,45 +57,34 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("MiniMarket")
-        self.geometry("900x600")
-        self.resizable(True, True)
+        self.geometry("1200x600")
+        self.resizable(True,True)
+        self.configure(bg="#FFFFFF")
 
-        tab_control=ttk.Notebook(self)
-        self.tab_productos= ttk.Frame(tab_control)
-        self.tab_ventas= ttk.Frame(tab_control)
-        self.tab_reportes= ttk.Frame(tab_control)
-        tab_control.add(self.tab_productos, text="Agregar productos")
-        tab_control.add(self.tab_ventas, text='Ventas')
-        tab_control.add(self.tab_reportes, text='Reportes')
-        tab_control.pack(expand=1, fill='both')
+        self.panel_left = tk.Frame(self, bg="#1E90FF", width=200, height=500)
+        self.panel_left.pack(side="left", fill="y")
 
-        self._build_productos_tab()
-    def _build_productos_tab(self):
-        frame_left= ttk.Frame(self.tab_productos, padding=10)
-        frame_left.pack(side="left", fill="y")
+        self.imagen = tk.PhotoImage(file="2.png")
+        self.label_logo = tk.Label(self.panel_left, image=self.imagen, bg="#1E90FF")
+        self.label_logo.place(x=10, y=20)
 
-        ttk.Label(frame_left, text="Código:").pack(anchor='w')
-        self.entry_codigo = ttk.Entry(frame_left)
-        self.entry_codigo.pack(fill='x')
+        self.button_ventas=tk.Button(self.panel_left, text="VENTAS", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25)
+        self.button_ventas.place(x=0, y=150, height=35)
 
-        ttk.Label(frame_left, text="Nombre:").pack(anchor='w')
-        self.entry_nombre = ttk.Entry(frame_left)
-        self.entry_nombre.pack(fill='x')
+        self.button_buscar_venta = tk.Button(self.panel_left, text="BUSCAR VENTA", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25)
+        self.button_buscar_venta.place(x=0, y=220, height=35)
 
-        ttk.Label(frame_left, text="Existencias:").pack(anchor='w')
-        self.entry_existencia = ttk.Entry(frame_left)
-        self.entry_existencia.pack(fill='x')
+        self.button_inventario = tk.Button(self.panel_left, text="INVENTARIO", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25)
+        self.button_inventario.place(x=0, y=290, height=35)
 
-        buton=tk.Button(frame_left, text="Guardar", bg="#2779F5")
-        buton.place(x=10, y=130,)
+        self.button_proveedores = tk.Button(self.panel_left, text="PROVEEDORES", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25)
+        self.button_proveedores.place(x=0, y=360, height=35)
 
-    def ventas(self):
-        frame=ttk.Frame(self.tab_ventas, padding=10)
-        frame.pack(side="right", fill="y")
+        self.button_reportes = tk.Button(self.panel_left, text="REPORTES", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25)
+        self.button_reportes.place(x=0, y=430, height=35)
 
-        ttk.Label(frame, text="Reporte").pack(anchor='w')
-
-
+        self.button_close= tk.Button(self.panel_left, text="CERRAR SESIÓN", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25)
+        self.button_close.place(x=0, y=550, height=35)
 
 if __name__ == "__main__":
     root=tk.Tk()
