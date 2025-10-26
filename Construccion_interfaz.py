@@ -86,6 +86,7 @@ class App(tk.Tk):
         self.button_close= tk.Button(self.panel_left, text="CERRAR SESIÓN", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25)
         self.button_close.place(x=0, y=550, height=35)
 
+
 if __name__ == "__main__":
     root=tk.Tk()
     app=Login(root)
