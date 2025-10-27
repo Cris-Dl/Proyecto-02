@@ -1,5 +1,126 @@
 import tkinter as tk
 from tkinter import messagebox
+import sqlite3
+from datetime import datetime
+
+DB_NAME = "productos.db"
+
+class Productos:
+    def __init__(self, codigo, nombre, precio, categoria, cantidad):
+        self.__codigo = codigo
+        self.__nombre = nombre
+        self.__precio = precio
+        self.__categoria = categoria
+        self.__cantidad = cantidad
+
+    @property
+    def codigo(self):
+        return self.__codigo
+
+    @property
+    def nombre(self):
+        return self.__nombre
+
+    @nombre.setter
+    def nombre(self, new_nombre):
+        if new_nombre:
+            self.__nombre = new_nombre
+        else:
+            print("El campo no puede estar vacio")
+
+    @property
+    def precio(self):
+        return self.__precio
+
+    @precio.setter
+    def precio(self, new_precio):
+        if new_precio:
+            self.__precio = new_precio
+        else:
+            print("El campo no puede estar vacio")
+
+    @property
+    def categoria(self):
+        return self.__categoria
+
+    @property
+    def cantidad(self):
+        return self.__cantidad
+
+    @cantidad.setter
+    def cantidad(self, new_cantidad):
+        if new_cantidad:
+            self.__cantidad = new_cantidad
+        else:
+            print("El campo no puede estar vacio")
+
+class ProductosDB:
+    DB_NAME = "productos.db"
+
+    @staticmethod
+    def _conn():
+        conn = sqlite3.connect(ProductosDB.DB_NAME)
+        conn.row_factory = sqlite3.Row
+        #Tabla de productos
+        conn.execute("""
+                CREATE TABLE IF NOT EXISTS productos (
+                    id_num INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nombre TEXT NOT NULL,
+                    codigo TEXT NOT NULL,
+                    precio REAL,
+                    categoria TEXT NOT NULL,
+                    cantidad REAL
+                );
+            """)
+
+        # Tabla de Ventas
+        conn.execute("""
+                CREATE TABLE IF NOT EXISTS ventas (
+                    id_venta INTEGER PRIMARY KEY AUTOINCREMENT,
+                    fecha_venta TEXT NOT NULL,
+                    total_venta REAL NOT NULL,
+                    detalle_productos TEXT 
+                );
+            """)
+        conn.commit()
+        return conn
+
+    @staticmethod
+    def guardar(producto: Productos):
+        with ProductosDB._conn() as conn:
+            conn.execute(
+                "INSERT INTO productos (nombre, codigo, precio, categoria, cantidad) VALUES (?, ?, ?, ?, ?)",
+                (producto.nombre, producto.codigo, producto.precio, producto.categoria, producto.cantidad)
+            )
+        print(f"Productos '{producto.nombre}' guardado con éxito.")
+
+    @staticmethod
+    def obtener_por_codigo(codigo: str):
+        with ProductosDB._conn() as conn:
+            cur = conn.execute("SELECT * FROM productos WHERE codigo = ?", (codigo,))
+            return cur.fetchone()
+
+    @staticmethod
+    def buscar_por_cadena(cadena: str):
+        patron = '%' + cadena + '%'
+        with ProductosDB._conn() as conn:
+            cur = conn.execute(
+                "SELECT nombre, codigo FROM productos WHERE nombre LIKE ? OR codigo LIKE ? LIMIT 10",
+                (patron, patron)
+            )
+            return cur.fetchall()
+
+    @staticmethod
+    def registrar_venta(total: float, detalle_productos: list):
+        fecha_actual = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        detalle_str = " | ".join(detalle_productos)
+        with ProductosDB._conn() as conn:
+            conn.execute(
+                "INSERT INTO ventas (fecha_venta, total_venta, detalle_productos) VALUES (?, ?, ?)",
+                (fecha_actual, total, detalle_str)
+            )
+            conn.commit()
+        print(f"Venta registrada: Total ${total:.2f}")
 
 class Login:
     def __init__(self, root):
@@ -63,6 +184,7 @@ class App(tk.Tk):
         self.COLOR_BOTON = "#007BFF"
         self.COLOR_SELECCION = "#0056b3"
         self.protocol("WM_DELETE_WINDOW", self.cerrar_sesion)
+        self.state('zoomed')
 
         self.panel_left = tk.Frame(self, bg="#1E90FF", width=200, height=500)
         self.panel_left.pack(side="left", fill="y")
@@ -130,7 +252,7 @@ class App(tk.Tk):
         panel_buttons = tk.Frame(self.panel_right, bg="#FFFFFF")
         panel_buttons.pack(pady=0)
 
-        button_agregar = tk.Button(panel_buttons, text="AGREGAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25)
+        button_agregar = tk.Button(panel_buttons, text="AGREGAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_agregar_producto)
         button_agregar.grid(row=0, column=0, padx=10)
 
         button_editar=tk.Button(panel_buttons, text="EDITAR PRODUCTO", bg=self.COLOR_BOTON, fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", width=25)
@@ -148,6 +270,48 @@ class App(tk.Tk):
         self.activar_boton(self.button_reportes)
         self.limpiar_panel()
         tk.Label(self.panel_right, text="Reportes del Sistema", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=50)
+
+    def mostrar_agregar_producto(self):
+        for widget in self.panel_right.winfo_children():
+            if getattr(widget, "_formulario", False):
+                widget.destroy()
+
+        panel_form = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_form.place(x=300, y=150, width=600, height=330)
+        panel_form._formulario = True
+
+        tk.Label(panel_form, text="AGREGAR PRODUCTO AL INVENTARIO",font=("Arial", 14, "bold"), bg="#FFFFFF").place(x=130, y=10)
+
+        tk.Label(panel_form, text="NOMBRE:", font=("Arial", 12, "bold"),bg="#FFFFFF").place(x=50, y=60)
+        entry_nombre = tk.Entry(panel_form, width=40, bg="#E6F3FF",relief="flat", font=("Arial", 12))
+        entry_nombre.place(x=200, y=60, height=25)
+
+        tk.Label(panel_form, text="CÓDIGO:", font=("Arial", 12, "bold"),bg="#FFFFFF").place(x=50, y=100)
+        entry_codigo = tk.Entry(panel_form, width=40, bg="#E6F3FF",relief="flat", font=("Arial", 12))
+        entry_codigo.place(x=200, y=100, height=25)
+
+        tk.Label(panel_form, text="PRECIO:", font=("Arial", 12, "bold"),bg="#FFFFFF").place(x=50, y=140)
+        entry_precio = tk.Entry(panel_form, width=40, bg="#E6F3FF",relief="flat", font=("Arial", 12))
+        entry_precio.place(x=200, y=140, height=25)
+
+        tk.Label(panel_form, text="CATEGORÍA:", font=("Arial", 12, "bold"),bg="#FFFFFF").place(x=50, y=180)
+        entry_categoria = tk.Entry(panel_form, width=40, bg="#E6F3FF",relief="flat", font=("Arial", 12))
+        entry_categoria.place(x=200, y=180, height=25)
+
+        tk.Label(panel_form, text="CANTIDAD:", font=("Arial", 12, "bold"),bg="#FFFFFF").place(x=50, y=220)
+        entry_cantidad = tk.Entry(panel_form, width=40, bg="#E6F3FF",relief="flat", font=("Arial", 12))
+        entry_cantidad.place(x=200, y=220, height=25)
+
+        def guardar_producto():
+            if not all([entry_codigo.get(), entry_nombre.get(), entry_precio.get(),entry_categoria.get(), entry_cantidad.get()]):
+                messagebox.showerror("Error", "Todos los campos son obligatorios.")
+                return
+
+            producto = Productos(codigo=entry_codigo.get(),nombre=entry_nombre.get(),precio=float(entry_precio.get()),categoria=entry_categoria.get(),cantidad=float(entry_cantidad.get()))
+            ProductosDB.guardar(producto)
+            messagebox.showinfo("Éxito", f"Producto '{producto.nombre}' agregado correctamente.")
+
+        tk.Button(panel_form, text="GUARDAR PRODUCTO", bg=self.COLOR_BOTON,fg="white", font=("Arial", 10, "bold"), relief="flat",cursor="hand2", command=guardar_producto).place(x=200, y=270, width=200, height=35)
 
     def cerrar_sesion(self):
         respuesta = messagebox.askyesno("Confirmación", "¿Está seguro que desea salir?")
