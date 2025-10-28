@@ -4,10 +4,11 @@ from datetime import datetime
 DB_NAME = "productos.db"
 
 class Productos:
-    def __init__(self, codigo, nombre, precio, categoria, cantidad):
+    def __init__(self, codigo, nombre, precio_compra, precio_venta, categoria, cantidad):
         self.__codigo = codigo
         self.__nombre = nombre
-        self.__precio = precio
+        self.__precio_venta = precio_venta
+        self.__precio_compra = precio_compra
         self.__categoria = categoria
         self.__cantidad = cantidad
 
@@ -27,13 +28,24 @@ class Productos:
             print("El campo no puede estar vacio")
 
     @property
-    def precio(self):
-        return self.__precio
+    def precio_compra(self):
+        return self.__precio_compra
 
-    @precio.setter
-    def precio(self, new_precio):
+    @precio_compra.setter
+    def precio_compra(self, new_precio):
         if new_precio:
-            self.__precio = new_precio
+            self.__precio_compra = new_precio
+        else:
+            print("El campo no puede estar vacio")
+
+    @property
+    def precio_venta(self):
+        return self.__precio_compra
+
+    @precio_venta.setter
+    def precio_venta(self, new_precio):
+        if new_precio:
+            self.__precio_venta = new_precio
         else:
             print("El campo no puede estar vacio")
 
@@ -64,8 +76,9 @@ class ProductosDB:
                 CREATE TABLE IF NOT EXISTS productos (
                     id_num INTEGER PRIMARY KEY AUTOINCREMENT,
                     nombre TEXT NOT NULL,
-                    codigo TEXT NOT NULL,
-                    precio REAL,
+                    codigo TEXT UNIQUE NOT NULL,
+                    precio_venta REAL,
+                    precio_compra REAL,
                     categoria TEXT NOT NULL,
                     cantidad REAL
                 );
@@ -80,6 +93,14 @@ class ProductosDB:
                     detalle_productos TEXT 
                 );
             """)
+
+        # Tabla de Categorias
+        conn.execute("""
+                        CREATE TABLE IF NOT EXISTS categorias (
+                            id_categoria INTEGER PRIMARY KEY AUTOINCREMENT,
+                            nombre TEXT UNIQUE NOT NULL
+                        );
+                    """)
         conn.commit()
         return conn
 
@@ -87,10 +108,9 @@ class ProductosDB:
     def guardar(producto: Productos):
         with ProductosDB._conn() as conn:
             conn.execute(
-                "INSERT INTO productos (nombre, codigo, precio, categoria, cantidad) VALUES (?, ?, ?, ?, ?)",
-                (producto.nombre, producto.codigo, producto.precio, producto.categoria, producto.cantidad)
+                "INSERT INTO productos (nombre, codigo, precio_compra, precio_venta, categoria, cantidad) VALUES (?, ?, ?, ?, ?, ?)",
+                (producto.nombre, producto.codigo, producto.precio_compra,producto.precio_venta, producto.categoria, producto.cantidad)
             )
-        print(f"Productos '{producto.nombre}' guardado con éxito.")
 
     @staticmethod
     def obtener_por_codigo(codigo: str):
@@ -103,7 +123,7 @@ class ProductosDB:
         patron = '%' + cadena + '%'
         with ProductosDB._conn() as conn:
             cur = conn.execute(
-                "SELECT nombre, codigo FROM productos WHERE nombre LIKE ? OR codigo LIKE ? LIMIT 10",
+                "SELECT nombre, codigo, precio_venta FROM productos WHERE nombre LIKE ? OR codigo LIKE ? LIMIT 10",
                 (patron, patron)
             )
             return cur.fetchall()
@@ -120,5 +140,42 @@ class ProductosDB:
             conn.commit()
         print(f"Venta registrada: Total ${total:.2f}")
 
+    @staticmethod
+    def actualizar_stock(codigo: str, cantidad_vendida: float):
+        with ProductosDB._conn() as conn:
+            conn.execute(
+                "UPDATE productos SET cantidad = cantidad - ? WHERE codigo = ?",
+                (cantidad_vendida, codigo)
+            )
+            conn.commit()
 
+    @staticmethod
+    def modificar_producto(codigo: str, nombre: str, precio_compra: float, precio_venta: float, categoria: str,cantidad: float):
+        with ProductosDB._conn() as conn:
+            conn.execute(
+                "UPDATE productos SET nombre=?, precio_compra=?, precio_venta=?, categoria=?, cantidad=? WHERE codigo=?",
+                (nombre, precio_compra, precio_venta, categoria, cantidad, codigo)
+            )
+            conn.commit()
+
+    @staticmethod
+    def agregar_stock(codigo: str, cantidad_adicional: float):
+        with ProductosDB._conn() as conn:
+            conn.execute(
+                "UPDATE productos SET cantidad = cantidad + ? WHERE codigo = ?",
+                (cantidad_adicional, codigo)
+            )
+            conn.commit()
+
+    @staticmethod
+    def obtener_categorias():
+        with ProductosDB._conn() as conn:
+            cur = conn.execute("SELECT nombre FROM categorias ORDER BY nombre")
+            return [row['nombre'] for row in cur.fetchall()]
+
+    @staticmethod
+    def agregar_categoria(nombre: str):
+        with ProductosDB._conn() as conn:
+            conn.execute("INSERT INTO categorias (nombre) VALUES (?)", (nombre,))
+            conn.commit()
 
