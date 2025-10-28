@@ -96,11 +96,11 @@ class ProductosDB:
 
         # Tabla de Categorias
         conn.execute("""
-                        CREATE TABLE IF NOT EXISTS categorias (
-                            id_categoria INTEGER PRIMARY KEY AUTOINCREMENT,
-                            nombre TEXT UNIQUE NOT NULL
-                        );
-                    """)
+                CREATE TABLE IF NOT EXISTS categorias (
+                    id_categoria INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nombre TEXT UNIQUE NOT NULL
+                );
+            """)
         conn.commit()
         return conn
 
