@@ -105,7 +105,7 @@ class ProductosDB:
         patron = '%' + cadena + '%'
         with ProductosDB._conn() as conn:
             cur = conn.execute(
-                "SELECT nombre, codigo, categoria FROM productos WHERE nombre LIKE ? OR codigo LIKE ? OR categoria LIKE ? LIMIT 15",
+                "SELECT nombre, codigo, categoria, precio FROM productos WHERE nombre LIKE ? OR codigo LIKE ? OR categoria LIKE ? LIMIT 15",
                 (patron, patron, patron)
             )
             return cur.fetchall()
@@ -237,17 +237,226 @@ class App(tk.Tk):
     def mostrar_ventas(self):
         self.activar_boton(self.button_ventas)
         self.limpiar_panel()
-        tk.Label(self.panel_right, text="Sección de Ventas", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=50)
+
+        tk.Label(self.panel_right, text="SECCIÓN DE VENTAS", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=20)
+        tk.Frame(self.panel_right, bg="gray", height=2).pack(fill="x", padx=0, pady=20)
+
+        panel_buscar = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_buscar.pack(pady=10)
+        tk.Label(panel_buscar, text="Buscar producto:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=0,padx=5)
+        entry_buscar = tk.Entry(panel_buscar, width=50, bg="#E6F3FF", font=("Arial", 12))
+        entry_buscar.grid(row=0, column=1, padx=5)
+
+        lista_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        lista_frame.pack(pady=5)
+        encabezado = tk.Frame(lista_frame, bg="#E6F3FF")
+        encabezado.pack(fill="x")
+        tk.Label(encabezado, text="CÓDIGO", font=("Arial", 11, "bold"), width=20, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="NOMBRE", font=("Arial", 11, "bold"), width=30, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="CATEGORÍA", font=("Arial", 11, "bold"), width=20, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="PRECIO", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(side="left")
+
+        frame_lista_scroll = tk.Frame(lista_frame, bg="#FFFFFF")
+        frame_lista_scroll.pack(pady=5)
+        scroll = tk.Scrollbar(frame_lista_scroll)
+        scroll.pack(side="right", fill="y")
+        lista_productos = tk.Listbox(frame_lista_scroll, width=100, height=8, font=("Courier New", 10),yscrollcommand=scroll.set)
+        lista_productos.pack(side="left")
+        scroll.config(command=lista_productos.yview)
+
+
+        tk.Label(self.panel_right, text="CARRITO", font=("Arial", 14, "bold"), bg="#FFFFFF").pack(pady=(15, 5))
+        carrito_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        carrito_frame.pack()
+        encabezado_carrito = tk.Frame(carrito_frame, bg="#E6F3FF")
+        encabezado_carrito.pack(fill="x")
+
+        tk.Label(encabezado_carrito, text="CANTIDAD", font=("Arial", 11, "bold"), width=10, anchor="w",bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado_carrito, text="NOMBRE", font=("Arial", 11, "bold"), width=30, anchor="w",bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado_carrito, text="PRECIO", font=("Arial", 11, "bold"), width=10, anchor="w",bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado_carrito, text="SUBTOTAL", font=("Arial", 11, "bold"), width=10, anchor="w",bg="#E6F3FF").pack(side="left")
+        carrito = tk.Listbox(carrito_frame, width=100, height=6, font=("Courier New", 10))
+        carrito.pack()
+
+        subtotal_var = tk.DoubleVar(value=0.0)
+        frame_total = tk.Frame(self.panel_right, bg="#FFFFFF")
+        frame_total.pack(pady=5)
+
+        tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left", padx=(10, 5))
+        tk.Label(frame_total, textvariable=subtotal_var, font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left")
+
+        self.carrito_items = []
+
+        def actualizar_lista(event=None):
+            cadena = entry_buscar.get()
+            resultados = ProductosDB.buscar_por_cadena(cadena) if cadena else []
+            lista_productos.delete(0, tk.END)
+            for r in resultados:
+                lista_productos.insert(tk.END,f"{r['codigo']:<22} {r['nombre']:<33} {r['categoria']:<20} Q.{r['precio']:<8.2f}")
+
+        def agregar_al_carrito(event=None):
+            if not lista_productos.curselection():
+                return
+            seleccion = lista_productos.get(lista_productos.curselection())
+            codigo = seleccion[:22].strip()
+            producto = ProductosDB.obtener_por_codigo(codigo)
+            if producto:
+                for item in self.carrito_items:
+                    if item["codigo"] == producto["codigo"]:
+                        item["cantidad"] += 1
+                        break
+                else:
+                    self.carrito_items.append({
+                        "codigo": producto["codigo"],
+                        "nombre": producto["nombre"],
+                        "precio": float(producto["precio"]),
+                        "cantidad": 1
+                    })
+
+                carrito.delete(0, tk.END)
+                total = 0
+                for item in self.carrito_items:
+                    subtotal = item["cantidad"] * item["precio"]
+                    total += subtotal
+                    carrito.insert(tk.END,f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
+                subtotal_var.set(total)
+
+        def finalizar_venta():
+            if not self.carrito_items:
+                messagebox.showerror("Error", "El carrito está vacío.")
+                return
+            detalle = [f"{i['cantidad']} x {i['nombre']} @Q.{i['precio']}" for i in self.carrito_items]
+            total = subtotal_var.get()
+            ProductosDB.registrar_venta(total, detalle)
+            messagebox.showinfo("Éxito", f"Venta registrada correctamente. Total: Q.{total:.2f}")
+            carrito.delete(0, tk.END)
+            subtotal_var.set(0.0)
+            self.carrito_items.clear()
+
+        entry_buscar.bind("<KeyRelease>", actualizar_lista)
+        lista_productos.bind("<Double-Button-1>", agregar_al_carrito)
+
+        tk.Button(self.panel_right, text="Finalizar Venta", bg=self.COLOR_BOTON, fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=finalizar_venta).pack(pady=10)
+
+        actualizar_lista()
 
     def mostrar_buscar_venta(self):
         self.activar_boton(self.button_buscar_venta)
         self.limpiar_panel()
-        tk.Label(self.panel_right, text="Buscar Venta", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=50)
+
+        tk.Label(self.panel_right, text="BUSCAR VENTA", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=20)
+
+        linea = tk.Frame(self.panel_right, bg="gray", height=2)
+        linea.pack(fill="x", padx=0, pady=10)
+
+        panel_filtros = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_filtros.pack(pady=10)
+
+        tk.Label(panel_filtros, text="Fecha (dd-mm-yyyy):", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0,column=0,padx=5)
+        entry_fecha = tk.Entry(panel_filtros, width=20, bg="#E6F3FF", font=("Arial", 12))
+        entry_fecha.grid(row=0, column=1, padx=5)
+
+        tk.Button(panel_filtros, text="Buscar", bg=self.COLOR_BOTON, fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2",command=lambda: actualizar_lista(entry_fecha.get())).grid(row=0, column=2, padx=10)
+
+        resumen_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        resumen_frame.pack(pady=5)
+
+
+        COLOR_ENCABEZADO = "#E6F3FF"
+        encabezado = tk.Frame(resumen_frame, bg=COLOR_ENCABEZADO)
+        encabezado.pack(side="top", fill="x")
+
+
+        tk.Label(encabezado, text="ID", font=("Arial", 11, "bold"), width=9, anchor="w", bg=COLOR_ENCABEZADO).pack(side="left")
+        tk.Label(encabezado, text="FECHA Y HORA", font=("Arial", 11, "bold"), width=35, anchor="w", bg=COLOR_ENCABEZADO).pack(side="left")
+        tk.Label(encabezado, text="TOTAL", font=("Arial", 11, "bold"), width=20, anchor="w", bg=COLOR_ENCABEZADO).pack(side="left")
+
+        frame_lista_scroll_resumen = tk.Frame(resumen_frame)
+        frame_lista_scroll_resumen.pack(side="top")
+
+        scroll = tk.Scrollbar(frame_lista_scroll_resumen)
+        scroll.pack(side="right", fill="y")
+
+        lista_resumen = tk.Listbox(frame_lista_scroll_resumen, width=80, height=5, font=("Courier New", 10),yscrollcommand=scroll.set)
+        lista_resumen.pack(side="left")
+        scroll.config(command=lista_resumen.yview)
+
+        tk.Label(self.panel_right, text="DETALLE DE LA VENTA", font=("Arial", 14, "bold"), bg="#FFFFFF").pack(pady=(15, 5))
+
+        detalle_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        detalle_frame.pack(fill="x", padx=10)
+
+        encabezado_detalle = tk.Frame(detalle_frame, bg="#E6F3FF")
+        encabezado_detalle.pack(side="top")
+
+        tk.Label(encabezado_detalle, text="CANTIDAD", font=("Arial", 10, "bold"), width=35, anchor="w",bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado_detalle, text="PRODUCTO", font=("Arial", 10, "bold"), width=35, anchor="w",bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado_detalle, text="PRECIO", font=("Arial", 10, "bold"), width=10, anchor="w",bg="#E6F3FF").pack(side="left")
+        frame_lista = tk.Frame(detalle_frame)
+        frame_lista.pack(pady=10)
+
+        scroll_detalle = tk.Scrollbar(frame_lista)
+        scroll_detalle.pack(side="right", fill="y")
+
+        lista_detalle = tk.Listbox(frame_lista, width=80, height=6, font=("Courier New", 10),yscrollcommand=scroll_detalle.set)
+        lista_detalle.pack(side="left")
+
+        scroll_detalle.config(command=lista_detalle.yview)
+
+        total_var = tk.DoubleVar(value=0.0)
+        frame_total = tk.Frame(self.panel_right, bg="#FFFFFF")
+        frame_total.pack(pady=5)
+
+        tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left", padx=(10, 5))
+        tk.Label(frame_total, textvariable=total_var, font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left")
+
+        def actualizar_lista(fecha_buscar=""):
+            lista_resumen.delete(0, tk.END)
+            with ProductosDB._conn() as conn:
+                if fecha_buscar:
+                    cur = conn.execute("SELECT id_venta, fecha_venta, total_venta FROM ventas WHERE fecha_venta LIKE ?",('%' + fecha_buscar + '%',))
+                else:
+                    cur = conn.execute("SELECT id_venta, fecha_venta, total_venta FROM ventas ORDER BY id_venta DESC LIMIT 50")
+                for v in cur.fetchall():
+                    lista_resumen.insert(tk.END,f"{v['id_venta']:<10} {v['fecha_venta']:<40} Q.{v['total_venta']:<10.2f}")
+
+
+        def mostrar_detalle(event):
+            if not lista_resumen.curselection():
+                return
+            indice = lista_resumen.curselection()[0]
+            seleccion = lista_resumen.get(indice)
+            id_venta = int(seleccion[:10].strip())
+            lista_detalle.delete(0, tk.END)
+            with ProductosDB._conn() as conn:
+                cur = conn.execute("SELECT detalle_productos, total_venta FROM ventas WHERE id_venta=?", (id_venta,))
+                venta = cur.fetchone()
+                if venta:
+                    detalle_productos_str = venta['detalle_productos']
+                    total_venta = venta['total_venta']
+
+                    for item in detalle_productos_str.split(" | "):
+                        try:
+                            cantidad, info_producto = item.split(" x ", 1)
+                            cantidad = cantidad.strip()
+
+                            nombre, precio_unidad_str = info_producto.split(" @Q.", 1)
+                            nombre = nombre.strip()
+                            precio_unidad = float(precio_unidad_str.strip())
+
+                            lista_detalle.insert(tk.END,f"{cantidad:<35} {nombre:<35} Q.{precio_unidad:<10.2f}")
+                        except ValueError:
+                            lista_detalle.insert(tk.END, f"ERROR DE FORMATO: {item}")
+
+                    total_var.set(total_venta)
+
+        lista_resumen.bind("<<ListboxSelect>>", mostrar_detalle)
+        actualizar_lista()
 
     def mostrar_inventario(self):
         self.activar_boton(self.button_inventario)
         self.limpiar_panel()
-        tk.Label(self.panel_right, text="Inventario de Productos", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=15)
+        tk.Label(self.panel_right, text="INVENTARIO DE PRODUCTOS", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=15)
 
         panel_buttons = tk.Frame(self.panel_right, bg="#FFFFFF")
         panel_buttons.pack(pady=0)
@@ -327,7 +536,7 @@ class App(tk.Tk):
         button_agregar = tk.Button(panel_buttons, text="AGREGAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_agregar_producto)
         button_agregar.grid(row=0, column=0, padx=10)
 
-        button_editar = tk.Button(panel_buttons, text="EDITAR PRODUCTO", bg=self.COLOR_SELECCION, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_editar_producto)
+        button_editar = tk.Button(panel_buttons, text="EDITAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_editar_producto)
         button_editar.grid(row=0, column=1, padx=10)
 
         linea = tk.Frame(self.panel_right, bg="gray", height=2)
