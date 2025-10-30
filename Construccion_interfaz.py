@@ -467,19 +467,40 @@ class App(tk.Tk):
         button_editar=tk.Button(panel_buttons, text="EDITAR PRODUCTO", bg=self.COLOR_BOTON, fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", width=25, command=self.mostrar_editar_producto)
         button_editar.grid(row=0, column=1, padx=10)
 
+        btn_eliminar = tk.Button(panel_buttons, text="ELIMINAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25)
+        btn_eliminar.grid(row=0, column=2, padx=10, pady=5)
+
         linea = tk.Frame(self.panel_right, bg="gray", height=2)
         linea.pack(fill="x", padx=0, pady=20)
 
     def mostrar_proveedores(self):
         self.activar_boton(self.button_proveedores)
         self.limpiar_panel()
-        tk.Label(self.panel_right, text="Gestión de Proveedores", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=50)
+
+        tk.Label(self.panel_right,text="GESTION DE PROVEEDORES",font=("Arial", 18, "bold"),bg="#FFFFFF").pack(pady=20)
+
+        frame_botones = tk.Frame(self.panel_right, bg="#FFFFFF")
+        frame_botones.pack(pady=(0, 15))
+
+        btn_agregar = tk.Button(frame_botones, text="AGREGAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25)
+        btn_agregar.grid(row=0, column=0, padx=10)
+
+        btn_editar = tk.Button(frame_botones, text="EDITAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25)
+        btn_editar.grid(row=0, column=1, padx=10)
+
+        btn_eliminar = tk.Button(frame_botones, text="ELIMINAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25)
+        btn_eliminar.grid(row=0, column=2, padx=10)
+
+        linea = tk.Frame(self.panel_right, bg="gray", height=2)
+        linea.pack(fill="x", padx=0, pady=10)
 
     def mostrar_reportes(self):
         self.activar_boton(self.button_reportes)
         self.limpiar_panel()
-        tk.Label(self.panel_right, text="Reportes del Sistema", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=50)
+        tk.Label(self.panel_right, text="REPORTES DEL SISTEMA", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=20)
 
+        linea = tk.Frame(self.panel_right, bg="gray", height=2)
+        linea.pack(fill="x", padx=0, pady=10)
     def mostrar_agregar_producto(self):
         for widget in self.panel_right.winfo_children():
             if isinstance(widget,tk.Frame) and widget.winfo_y() > 150:
@@ -528,7 +549,7 @@ class App(tk.Tk):
 
         self.activar_boton(self.button_inventario)
 
-        tk.Label(self.panel_right, text="Inventario de Productos", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=15)
+        tk.Label(self.panel_right, text="INVENTARIO DE PRODUCTOS", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=15)
 
         panel_buttons = tk.Frame(self.panel_right, bg="#FFFFFF")
         panel_buttons.pack(pady=5)
@@ -538,6 +559,9 @@ class App(tk.Tk):
 
         button_editar = tk.Button(panel_buttons, text="EDITAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_editar_producto)
         button_editar.grid(row=0, column=1, padx=10)
+
+        btn_eliminar = tk.Button(panel_buttons, text="ELIMINAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25)
+        btn_eliminar.grid(row=0, column=2, padx=10, pady=5)
 
         linea = tk.Frame(self.panel_right, bg="gray", height=2)
         linea.pack(fill="x", padx=0, pady=20)
