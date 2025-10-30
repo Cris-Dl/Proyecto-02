@@ -139,7 +139,16 @@ class ProductosDB:
                     cantidad REAL
                 );
             """)
+        conn.commit()
+        return conn
 
+class VentasDB:
+    DB_NAME = "ventas.db"
+
+    @staticmethod
+    def _conn():
+        conn = sqlite3.connect(VentasDB.DB_NAME)
+        conn.row_factory = sqlite3.Row
         # Tabla de Ventas
         conn.execute("""
                 CREATE TABLE IF NOT EXISTS ventas (
@@ -149,7 +158,16 @@ class ProductosDB:
                     detalle_productos TEXT 
                 );
             """)
+        conn.commit()
+        return conn
 
+class CategoriasDB:
+    DB_NAME = "categorias.db"
+
+    @staticmethod
+    def _conn():
+        conn = sqlite3.connect(CategoriasDB.DB_NAME)
+        conn.row_factory = sqlite3.Row
         # Tabla de Categorias
         conn.execute("""
                 CREATE TABLE IF NOT EXISTS categorias (
@@ -157,7 +175,17 @@ class ProductosDB:
                     nombre TEXT UNIQUE NOT NULL
                 );
             """)
+        conn.commit()
+        return conn
 
+class ProveedoresDB:
+    DB_NAME = "proveedores.db"
+
+    @staticmethod
+    def _conn():
+        conn = sqlite3.connect(ProductosDB.DB_NAME)
+        conn.row_factory = sqlite3.Row
+        #Tabla proveedores
         conn.execute("""
                 CREATE TABLE IF NOT EXISTS proveedores (
                     id_proveedor INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -171,6 +199,7 @@ class ProductosDB:
         conn.commit()
         return conn
 
+class GuardarProducto(ProductosDB):
     @staticmethod
     def guardar(producto: Productos):
         with ProductosDB._conn() as conn:
@@ -178,13 +207,14 @@ class ProductosDB:
                 "INSERT INTO productos (nombre, codigo, precio_compra, precio_venta, categoria, cantidad) VALUES (?, ?, ?, ?, ?, ?)",
                 (producto.nombre, producto.codigo, producto.precio_compra,producto.precio_venta, producto.categoria, producto.cantidad)
             )
-
+class ObtenerCodigo(ProductosDB):
     @staticmethod
     def obtener_por_codigo(codigo: str):
         with ProductosDB._conn() as conn:
             cur = conn.execute("SELECT * FROM productos WHERE codigo = ?", (codigo,))
             return cur.fetchone()
 
+class Buscar(ProductosDB):
     @staticmethod
     def buscar_por_cadena(cadena: str):
         patron = '%' + cadena + '%'
@@ -195,6 +225,7 @@ class ProductosDB:
             )
             return cur.fetchall()
 
+class RegistrarVenta(ProductosDB):
     @staticmethod
     def registrar_venta(total: float, detalle_productos: list):
         fecha_actual = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
@@ -207,6 +238,7 @@ class ProductosDB:
             conn.commit()
         print(f"Venta registrada: Total ${total:.2f}")
 
+class ActualizarStock(ProductosDB):
     @staticmethod
     def actualizar_stock(codigo: str, cantidad_vendida: float):
         with ProductosDB._conn() as conn:
@@ -216,6 +248,7 @@ class ProductosDB:
             )
             conn.commit()
 
+class ModificarProducto(ProductosDB):
     @staticmethod
     def modificar_producto(codigo: str, nombre: str, precio_compra: float, precio_venta: float, categoria: str,cantidad: float):
         with ProductosDB._conn() as conn:
@@ -225,6 +258,7 @@ class ProductosDB:
             )
             conn.commit()
 
+class AgregarStock(ProductosDB):
     @staticmethod
     def agregar_stock(codigo: str, cantidad_adicional: float):
         with ProductosDB._conn() as conn:
@@ -234,12 +268,14 @@ class ProductosDB:
             )
             conn.commit()
 
+class ObtenerCategorias(ProductosDB):
     @staticmethod
     def obtener_categorias():
         with ProductosDB._conn() as conn:
             cur = conn.execute("SELECT nombre FROM categorias ORDER BY nombre")
             return [row['nombre'] for row in cur.fetchall()]
 
+class AgregarCategori(ProductosDB):
     @staticmethod
     def agregar_categoria(nombre: str):
         with ProductosDB._conn() as conn:
