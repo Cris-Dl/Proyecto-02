@@ -64,6 +64,62 @@ class Productos:
         else:
             print("El campo no puede estar vacio")
 
+class Proveedores:
+    def __init__(self, nombre, codigo, telefono, ubicacion, informacion):
+        self.__nombre = nombre
+        self.__codigo = codigo
+        self.__telefono = telefono
+        self.__ubicacion = ubicacion
+        self.__informacion = informacion
+
+    @property
+    def nombre(self):
+        return self.__nombre
+
+    @nombre.setter
+    def nombre(self, new_nombre):
+        if new_nombre:
+            self.__nombre = new_nombre
+        else:
+            print("El campo no puede estar vacio")
+
+    @property
+    def codigo(self):
+        return self.__codigo
+
+    @property
+    def telefono(self):
+        return self.__telefono
+
+    @telefono.setter
+    def telefono(self, new_telefono):
+        if new_telefono:
+            self.__telefono = new_telefono
+        else:
+            print("El campo no puede estar vacio")
+
+    @property
+    def ubicacion(self):
+        return self.__ubicacion
+
+    @ubicacion.setter
+    def ubicacion(self, new_ubicacion):
+        if new_ubicacion:
+            self.__ubicacion = new_ubicacion
+        else:
+            print("El campo no puede estar vacio")
+
+    @property
+    def informacion(self):
+        return self.__informacion
+
+    @informacion.setter
+    def informacion(self, new_informacion):
+        if new_informacion:
+            self.__informacion = new_informacion
+        else:
+            print("El campo no puede estar vacio")
+
 class ProductosDB:
     DB_NAME = "productos.db"
 
@@ -99,6 +155,17 @@ class ProductosDB:
                 CREATE TABLE IF NOT EXISTS categorias (
                     id_categoria INTEGER PRIMARY KEY AUTOINCREMENT,
                     nombre TEXT UNIQUE NOT NULL
+                );
+            """)
+
+        conn.execute("""
+                CREATE TABLE IF NOT EXISTS proveedores (
+                    id_proveedor INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nombre TEXT UNIQUE NOT NULL,
+                    codigo TEXT UNIQUE NOT NULL,
+                    telefono TEXT UNIQUE NOT NULL,
+                    ubicacion TEXT NOT NULL,
+                    informacion TEXT UNIQUE NOT NULL
                 );
             """)
         conn.commit()
