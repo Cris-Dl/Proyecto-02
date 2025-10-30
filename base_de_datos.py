@@ -1,12 +1,14 @@
 import sqlite3
+from datetime import datetime
 
 DB_NAME = "productos.db"
 
 class Productos:
-    def __init__(self, codigo, nombre, precio, categoria, cantidad):
+    def __init__(self, codigo, nombre, precio_compra, precio_venta, categoria, cantidad):
         self.__codigo = codigo
         self.__nombre = nombre
-        self.__precio = precio
+        self.__precio_venta = precio_venta
+        self.__precio_compra = precio_compra
         self.__categoria = categoria
         self.__cantidad = cantidad
 
@@ -26,13 +28,24 @@ class Productos:
             print("El campo no puede estar vacio")
 
     @property
-    def precio(self):
-        return self.__precio
+    def precio_compra(self):
+        return self.__precio_compra
 
-    @precio.setter
-    def precio(self, new_precio):
+    @precio_compra.setter
+    def precio_compra(self, new_precio):
         if new_precio:
-            self.__precio = new_precio
+            self.__precio_compra = new_precio
+        else:
+            print("El campo no puede estar vacio")
+
+    @property
+    def precio_venta(self):
+        return self.__precio_compra
+
+    @precio_venta.setter
+    def precio_venta(self, new_precio):
+        if new_precio:
+            self.__precio_venta = new_precio
         else:
             print("El campo no puede estar vacio")
 
@@ -51,6 +64,62 @@ class Productos:
         else:
             print("El campo no puede estar vacio")
 
+class Proveedores:
+    def __init__(self, nombre, codigo, telefono, ubicacion, informacion):
+        self.__nombre = nombre
+        self.__codigo = codigo
+        self.__telefono = telefono
+        self.__ubicacion = ubicacion
+        self.__informacion = informacion
+
+    @property
+    def nombre(self):
+        return self.__nombre
+
+    @nombre.setter
+    def nombre(self, new_nombre):
+        if new_nombre:
+            self.__nombre = new_nombre
+        else:
+            print("El campo no puede estar vacio")
+
+    @property
+    def codigo(self):
+        return self.__codigo
+
+    @property
+    def telefono(self):
+        return self.__telefono
+
+    @telefono.setter
+    def telefono(self, new_telefono):
+        if new_telefono:
+            self.__telefono = new_telefono
+        else:
+            print("El campo no puede estar vacio")
+
+    @property
+    def ubicacion(self):
+        return self.__ubicacion
+
+    @ubicacion.setter
+    def ubicacion(self, new_ubicacion):
+        if new_ubicacion:
+            self.__ubicacion = new_ubicacion
+        else:
+            print("El campo no puede estar vacio")
+
+    @property
+    def informacion(self):
+        return self.__informacion
+
+    @informacion.setter
+    def informacion(self, new_informacion):
+        if new_informacion:
+            self.__informacion = new_informacion
+        else:
+            print("El campo no puede estar vacio")
+
 class ProductosDB:
     DB_NAME = "productos.db"
 
@@ -58,14 +127,45 @@ class ProductosDB:
     def _conn():
         conn = sqlite3.connect(ProductosDB.DB_NAME)
         conn.row_factory = sqlite3.Row
+        #Tabla de productos
         conn.execute("""
                 CREATE TABLE IF NOT EXISTS productos (
                     id_num INTEGER PRIMARY KEY AUTOINCREMENT,
                     nombre TEXT NOT NULL,
-                    codigo TEXT NOT NULL,
-                    precio REAL,
+                    codigo TEXT UNIQUE NOT NULL,
+                    precio_venta REAL,
+                    precio_compra REAL,
                     categoria TEXT NOT NULL,
                     cantidad REAL
+                );
+            """)
+
+        # Tabla de Ventas
+        conn.execute("""
+                CREATE TABLE IF NOT EXISTS ventas (
+                    id_venta INTEGER PRIMARY KEY AUTOINCREMENT,
+                    fecha_venta TEXT NOT NULL,
+                    total_venta REAL NOT NULL,
+                    detalle_productos TEXT 
+                );
+            """)
+
+        # Tabla de Categorias
+        conn.execute("""
+                CREATE TABLE IF NOT EXISTS categorias (
+                    id_categoria INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nombre TEXT UNIQUE NOT NULL
+                );
+            """)
+
+        conn.execute("""
+                CREATE TABLE IF NOT EXISTS proveedores (
+                    id_proveedor INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nombre TEXT UNIQUE NOT NULL,
+                    codigo TEXT UNIQUE NOT NULL,
+                    telefono TEXT UNIQUE NOT NULL,
+                    ubicacion TEXT NOT NULL,
+                    informacion TEXT UNIQUE NOT NULL
                 );
             """)
         conn.commit()
@@ -75,66 +175,74 @@ class ProductosDB:
     def guardar(producto: Productos):
         with ProductosDB._conn() as conn:
             conn.execute(
-                "INSERT INTO productos (nombre, codigo, precio, categoria, cantidad) VALUES (?, ?, ?, ?, ?)",
-                (producto.nombre, producto.codigo, producto.precio, producto.categoria, producto.cantidad)
+                "INSERT INTO productos (nombre, codigo, precio_compra, precio_venta, categoria, cantidad) VALUES (?, ?, ?, ?, ?, ?)",
+                (producto.nombre, producto.codigo, producto.precio_compra,producto.precio_venta, producto.categoria, producto.cantidad)
             )
-        print(f"Productos '{producto.nombre}' guardado con éxito.")
 
     @staticmethod
-    def ver_productos(): #Cambiar el modo de visualizar
+    def obtener_por_codigo(codigo: str):
         with ProductosDB._conn() as conn:
-            cur = conn.execute("SELECT * FROM productos")
-            filas = cur.fetchall()
-            if not filas:
-                print("No hay productos registrados.")
-                return
-            print("\n--- LISTADO DE PRODUCTOS ---")
-            for f in filas:
-                print(
-                    f"ID: {f['id_num']} | Nombre: {f['nombre']} | Codigo: {f['codigo']} | Precio: {f['precio']} | Categoría: {f['categoria']} | Cantidad:{f['cantidad']}")
+            cur = conn.execute("SELECT * FROM productos WHERE codigo = ?", (codigo,))
+            return cur.fetchone()
 
     @staticmethod
-    def registrar_producto():
-        nombre = input("Ingrese el nombre del producto: ")
-        codigo = input("Ingrese el codigo del producto: ")
-        precio = float(input("Ingrese el precio del producto: "))
-        categoria = input("Ingrese la categoria del producto: ")
-        cantidad = int(input("Ingrese la cantidad que tiene del producto: "))
-        nuevo_producto = Productos(codigo, nombre, precio, categoria, cantidad)
-        ProductosDB.guardar(nuevo_producto)
-
-    @staticmethod
-    def eliminar_producto():
-        codigo = input("Ingrese el codigo del producto a eliminar eliminar: ")
+    def buscar_por_cadena(cadena: str):
+        patron = '%' + cadena + '%'
         with ProductosDB._conn() as conn:
-            cur = conn.execute("DELETE FROM productos WHERE codigo = ?", (codigo,))
-            if cur.rowcount == 0:
-                print("No se encontró el producto.")
-            else:
-                print("Producto eliminado con éxito.")
+            cur = conn.execute(
+                "SELECT nombre, codigo, precio_venta FROM productos WHERE nombre LIKE ? OR codigo LIKE ? LIMIT 10",
+                (patron, patron)
+            )
+            return cur.fetchall()
 
     @staticmethod
-    def consultar_producto():
-        consulta = input("Ingrese la categoria a buscar: ")
+    def registrar_venta(total: float, detalle_productos: list):
+        fecha_actual = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        detalle_str = " | ".join(detalle_productos)
+        with ProductosDB._conn() as conn:
+            conn.execute(
+                "INSERT INTO ventas (fecha_venta, total_venta, detalle_productos) VALUES (?, ?, ?)",
+                (fecha_actual, total, detalle_str)
+            )
+            conn.commit()
+        print(f"Venta registrada: Total ${total:.2f}")
 
+    @staticmethod
+    def actualizar_stock(codigo: str, cantidad_vendida: float):
+        with ProductosDB._conn() as conn:
+            conn.execute(
+                "UPDATE productos SET cantidad = cantidad - ? WHERE codigo = ?",
+                (cantidad_vendida, codigo)
+            )
+            conn.commit()
 
-while True:
-    print("---Menú----")
-    print("1.- Registrar producto")
-    print("2.- Ver productos")
-    print("3.- Eliminar producto")
-    menu_option = input("Ingrese el número de la opción que quiera realizar: ")
-    print()
-    match menu_option:
-        case "1":
-            print("Registrar producto")
-            ProductosDB.registrar_producto()
-            print()
-        case "2":
-            print("Ver productos")
-            ProductosDB.ver_productos()
-            print()
-        case "3":
-            print("Eliminar producto")
-            ProductosDB.eliminar_producto()
-            print()
+    @staticmethod
+    def modificar_producto(codigo: str, nombre: str, precio_compra: float, precio_venta: float, categoria: str,cantidad: float):
+        with ProductosDB._conn() as conn:
+            conn.execute(
+                "UPDATE productos SET nombre=?, precio_compra=?, precio_venta=?, categoria=?, cantidad=? WHERE codigo=?",
+                (nombre, precio_compra, precio_venta, categoria, cantidad, codigo)
+            )
+            conn.commit()
+
+    @staticmethod
+    def agregar_stock(codigo: str, cantidad_adicional: float):
+        with ProductosDB._conn() as conn:
+            conn.execute(
+                "UPDATE productos SET cantidad = cantidad + ? WHERE codigo = ?",
+                (cantidad_adicional, codigo)
+            )
+            conn.commit()
+
+    @staticmethod
+    def obtener_categorias():
+        with ProductosDB._conn() as conn:
+            cur = conn.execute("SELECT nombre FROM categorias ORDER BY nombre")
+            return [row['nombre'] for row in cur.fetchall()]
+
+    @staticmethod
+    def agregar_categoria(nombre: str):
+        with ProductosDB._conn() as conn:
+            conn.execute("INSERT INTO categorias (nombre) VALUES (?)", (nombre,))
+            conn.commit()
+
