@@ -282,3 +282,21 @@ class AgregarCategori(ProductosDB):
             conn.execute("INSERT INTO categorias (nombre) VALUES (?)", (nombre,))
             conn.commit()
 
+class GuardarProveedor(ProveedoresDB):
+    @staticmethod
+    def guardar(proveedor: Proveedores):
+        with ProveedoresDB._conn() as conn:
+            conn.execute(
+                "INSERT INTO proveedores (nombre, codigo, telefono, ubicacion, informacion) VALUES (?, ?, ?, ?, ?)",
+                (proveedor.nombre, proveedor.codigo, proveedor.telefono, proveedor.ubicacion, proveedor.informacion)
+            )
+            conn.commit()
+
+class ObtenerProveedores(ProveedoresDB):
+    @staticmethod
+    def obtener_todos():
+        with ProveedoresDB._conn() as conn:
+            cur = conn.execute(
+                "SELECT nombre, codigo, telefono, ubicacion, informacion FROM proveedores ORDER BY nombre"
+            )
+            return cur.fetchall()
