@@ -628,6 +628,9 @@ class App(tk.Tk):
         btn_eliminar = tk.Button(panel_buttons, text="ELIMINAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_eliminar_producto)
         btn_eliminar.grid(row=0, column=2, padx=10, pady=5)
 
+        btn_categorias = tk.Button(panel_buttons, text="CATEGORÍAS", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_categorias)
+        btn_categorias.grid(row=0, column=3, padx=10, pady=5)
+
         linea = tk.Frame(self.panel_right, bg="gray", height=2)
         linea.pack(fill="x", padx=0, pady=20)
 
@@ -640,17 +643,18 @@ class App(tk.Tk):
         frame_botones = tk.Frame(self.panel_right, bg="#FFFFFF")
         frame_botones.pack(pady=(0, 15))
 
-        btn_agregar = tk.Button(frame_botones, text="AGREGAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25)
+        btn_agregar = tk.Button(frame_botones, text="AGREGAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_agregar_proveedor)
         btn_agregar.grid(row=0, column=0, padx=10)
 
-        btn_editar = tk.Button(frame_botones, text="EDITAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25)
+        btn_editar = tk.Button(frame_botones, text="EDITAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_editar_proveedor)
         btn_editar.grid(row=0, column=1, padx=10)
 
-        btn_eliminar = tk.Button(frame_botones, text="ELIMINAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25)
+        btn_eliminar = tk.Button(frame_botones, text="ELIMINAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_eliminar_proveedor)
         btn_eliminar.grid(row=0, column=2, padx=10)
 
         linea = tk.Frame(self.panel_right, bg="gray", height=2)
         linea.pack(fill="x", padx=0, pady=10)
+
 
     def mostrar_reportes(self):
         self.activar_boton(self.button_reportes)
@@ -669,8 +673,7 @@ class App(tk.Tk):
         panel_form.place(x=300, y=200, width=600, height=400)
         panel_form._formulario = True
 
-        tk.Label(panel_form, text="AGREGAR PRODUCTO AL INVENTARIO", font=("Arial", 14, "bold"), bg="#FFFFFF").place(
-            x=130, y=0)
+        tk.Label(panel_form, text="AGREGAR PRODUCTO AL INVENTARIO", font=("Arial", 14, "bold"), bg="#FFFFFF").place(x=130, y=0)
 
         tk.Label(panel_form, text="NOMBRE:", font=("Arial", 12, "bold"), bg="#FFFFFF").place(x=50, y=40)
         entry_nombre = tk.Entry(panel_form, width=40, bg="#E6F3FF", relief="flat", font=("Arial", 12))
@@ -702,14 +705,11 @@ class App(tk.Tk):
                 messagebox.showerror("Error", "Todos los campos son obligatorios.")
                 return
 
-            producto = Productos(codigo=entry_codigo.get(), nombre=entry_nombre.get(),
-                                 precio_venta=float(entry_precio_venta.get()), precio_compra=float(entry_precio.get()),
-                                 categoria=entry_categoria.get(), cantidad=float(entry_cantidad.get()))
+            producto = Productos(codigo=entry_codigo.get(), nombre=entry_nombre.get(),precio_venta=float(entry_precio_venta.get()), precio_compra=float(entry_precio.get()),categoria=entry_categoria.get(), cantidad=float(entry_cantidad.get()))
             GuardarProducto.guardar(producto)
             messagebox.showinfo("Éxito", f"Producto '{producto.nombre}' agregado correctamente.")
 
-        tk.Button(panel_form, text="GUARDAR PRODUCTO", bg=self.COLOR_BOTON, fg="white", font=("Arial", 10, "bold"),
-                  relief="flat", cursor="hand2", command=guardar_producto).place(x=200, y=280, width=200, height=35)
+        tk.Button(panel_form, text="GUARDAR PRODUCTO", bg=self.COLOR_BOTON, fg="white", font=("Arial", 10, "bold"),relief="flat", cursor="hand2", command=guardar_producto).place(x=200, y=280, width=200, height=35)
 
     def mostrar_editar_producto(self):
         for widget in self.panel_right.winfo_children():
@@ -730,6 +730,9 @@ class App(tk.Tk):
 
         btn_eliminar = tk.Button(panel_buttons, text="ELIMINAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_eliminar_producto)
         btn_eliminar.grid(row=0, column=2, padx=10, pady=5)
+
+        btn_categorias = tk.Button(panel_buttons, text="CATEGORÍAS", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_categorias)
+        btn_categorias.grid(row=0, column=3, padx=10, pady=5)
 
         linea = tk.Frame(self.panel_right, bg="gray", height=2)
         linea.pack(fill="x", padx=0, pady=20)
@@ -864,6 +867,9 @@ class App(tk.Tk):
         btn_eliminar = tk.Button(panel_buttons, text="ELIMINAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_eliminar_producto)
         btn_eliminar.grid(row=0, column=2, padx=10, pady=5)
 
+        btn_categorias = tk.Button(panel_buttons, text="CATEGORÍAS", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_categorias)
+        btn_categorias.grid(row=0, column=3, padx=10, pady=5)
+
         linea = tk.Frame(self.panel_right, bg="gray", height=2)
         linea.pack(fill="x", padx=0, pady=20)
 
@@ -948,6 +954,534 @@ class App(tk.Tk):
         btn_eliminar_prod = tk.Button(panel_form,text="ELIMINAR PRODUCTO",bg=self.COLOR_BOTON,fg="white",font=("Arial", 11, "bold"),relief="flat",cursor="hand2",command=eliminar_producto)
         btn_eliminar_prod.pack(pady=15)
         entry_buscar.focus()
+
+    def mostrar_agregar_proveedor(self):
+        for widget in self.panel_right.winfo_children():
+            widget.destroy()
+
+        self.activar_boton(self.button_proveedores)
+
+        tk.Label(self.panel_right, text="GESTION DE PROVEEDORES", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=20)
+
+        frame_botones = tk.Frame(self.panel_right, bg="#FFFFFF")
+        frame_botones.pack(pady=(0, 15))
+
+        btn_agregar = tk.Button(frame_botones, text="AGREGAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_agregar_proveedor)
+        btn_agregar.grid(row=0, column=0, padx=10)
+
+        btn_editar = tk.Button(frame_botones, text="EDITAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_editar_proveedor)
+        btn_editar.grid(row=0, column=1, padx=10)
+
+        btn_eliminar = tk.Button(frame_botones, text="ELIMINAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_eliminar_proveedor)
+        btn_eliminar.grid(row=0, column=2, padx=10)
+
+        linea = tk.Frame(self.panel_right, bg="gray", height=2)
+        linea.pack(fill="x", padx=0, pady=10)
+
+        panel_form = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_form.pack(fill="both", expand=True, padx=20, pady=10)
+
+        tk.Label(panel_form, text="AGREGAR NUEVO PROVEEDOR", font=("Arial", 16, "bold"), bg="#FFFFFF").pack(pady=10)
+
+        campos_frame = tk.Frame(panel_form, bg="#FFFFFF")
+        campos_frame.pack(pady=20)
+
+        tk.Label(campos_frame, text="NOMBRE:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=0, padx=5,pady=10, sticky="e")
+        entry_nombre = tk.Entry(campos_frame, width=40, bg="#E6F3FF", relief="flat", font=("Arial", 12))
+        entry_nombre.grid(row=0, column=1, padx=5, pady=10)
+
+        tk.Label(campos_frame, text="CÓDIGO:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=1, column=0, padx=5,pady=10, sticky="e")
+        entry_codigo = tk.Entry(campos_frame, width=40, bg="#E6F3FF", relief="flat", font=("Arial", 12))
+        entry_codigo.grid(row=1, column=1, padx=5, pady=10)
+
+        tk.Label(campos_frame, text="TELÉFONO:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=2, column=0, padx=5,pady=10, sticky="e")
+        entry_telefono = tk.Entry(campos_frame, width=40, bg="#E6F3FF", relief="flat", font=("Arial", 12))
+        entry_telefono.grid(row=2, column=1, padx=5, pady=10)
+
+        tk.Label(campos_frame, text="UBICACIÓN:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=3, column=0,padx=5, pady=10,sticky="e")
+        entry_ubicacion = tk.Entry(campos_frame, width=40, bg="#E6F3FF", relief="flat", font=("Arial", 12))
+        entry_ubicacion.grid(row=3, column=1, padx=5, pady=10)
+
+        tk.Label(campos_frame, text="INFORMACIÓN:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=4, column=0,padx=5, pady=10,sticky="e")
+        entry_informacion = tk.Entry(campos_frame, width=40, bg="#E6F3FF", relief="flat", font=("Arial", 12))
+        entry_informacion.grid(row=4, column=1, padx=5, pady=10)
+
+        def guardar_proveedor():
+            nombre = entry_nombre.get().strip()
+            codigo = entry_codigo.get().strip()
+            telefono = entry_telefono.get().strip()
+            ubicacion = entry_ubicacion.get().strip()
+            informacion = entry_informacion.get().strip()
+
+            if not all([nombre, codigo, telefono, ubicacion, informacion]):
+                messagebox.showerror("Error", "Todos los campos son obligatorios.")
+                return
+
+            try:
+                proveedor = Proveedores(nombre=nombre, codigo=codigo, telefono=telefono,ubicacion=ubicacion, informacion=informacion)
+                GuardarProveedor.guardar(proveedor)
+                messagebox.showinfo("Éxito", f"Proveedor '{nombre}' agregado correctamente.")
+
+                entry_nombre.delete(0, tk.END)
+                entry_codigo.delete(0, tk.END)
+                entry_telefono.delete(0, tk.END)
+                entry_ubicacion.delete(0, tk.END)
+                entry_informacion.delete(0, tk.END)
+                entry_nombre.focus()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo guardar el proveedor:\n{str(e)}")
+
+        btn_guardar = tk.Button(campos_frame, text="GUARDAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=guardar_proveedor, width=30)
+        btn_guardar.grid(row=5, column=0, columnspan=2, pady=20)
+
+        entry_nombre.focus()
+
+    def mostrar_editar_proveedor(self):
+        for widget in self.panel_right.winfo_children():
+            widget.destroy()
+
+        self.activar_boton(self.button_proveedores)
+
+        tk.Label(self.panel_right, text="GESTION DE PROVEEDORES", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=20)
+
+        frame_botones = tk.Frame(self.panel_right, bg="#FFFFFF")
+        frame_botones.pack(pady=(0, 15))
+
+        btn_agregar = tk.Button(frame_botones, text="AGREGAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_agregar_proveedor)
+        btn_agregar.grid(row=0, column=0, padx=10)
+
+        btn_editar = tk.Button(frame_botones, text="EDITAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_editar_proveedor)
+        btn_editar.grid(row=0, column=1, padx=10)
+
+        btn_eliminar = tk.Button(frame_botones, text="ELIMINAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_eliminar_proveedor)
+        btn_eliminar.grid(row=0, column=2, padx=10)
+
+        linea = tk.Frame(self.panel_right, bg="gray", height=2)
+        linea.pack(fill="x", padx=0, pady=10)
+
+        panel_form = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_form.pack(fill="both", expand=True, padx=20, pady=10)
+
+        tk.Label(panel_form, text="EDITAR PROVEEDOR", font=("Arial", 16, "bold"), bg="#FFFFFF").pack(pady=5)
+
+        tk.Label(panel_form, text="Buscar (nombre, código o teléfono):", font=("Arial", 12, "bold"),bg="#FFFFFF").pack(pady=(5, 0))
+        entry_buscar = tk.Entry(panel_form, width=50, bg="#E6F3FF", relief="flat", font=("Arial", 12))
+        entry_buscar.pack(pady=5)
+
+        lista_frame = tk.Frame(panel_form, bg="#FFFFFF")
+        lista_frame.pack(pady=5)
+
+        encabezado = tk.Frame(lista_frame, bg="#E6F3FF")
+        encabezado.pack()
+
+        tk.Label(encabezado, text="CÓDIGO", font=("Arial", 11, "bold"), width=20, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="NOMBRE", font=("Arial", 11, "bold"), width=30, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="TELÉFONO", font=("Arial", 11, "bold"), width=20, anchor="w", bg="#E6F3FF").pack(side="left")
+
+        frame_lista_scroll = tk.Frame(lista_frame, bg="#FFFFFF")
+        frame_lista_scroll.pack(pady=5)
+
+        scroll = tk.Scrollbar(frame_lista_scroll)
+        scroll.pack(side="right", fill="y")
+
+        lista = tk.Listbox(frame_lista_scroll, width=80, height=5, font=("Courier New", 10), yscrollcommand=scroll.set)
+        lista.pack(side="left", padx=0)
+        scroll.config(command=lista.yview)
+
+        campos_frame = tk.Frame(panel_form, bg="#FFFFFF")
+        campos_frame.pack(pady=10)
+
+        etiquetas = ["NOMBRE:", "TELÉFONO:", "UBICACIÓN:", "INFORMACIÓN:"]
+        entradas = []
+        for i, texto in enumerate(etiquetas):
+            tk.Label(campos_frame, text=texto, font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=i, column=0, padx=5,pady=5, sticky="e")
+            e = tk.Entry(campos_frame, width=35, bg="#E6F3FF", relief="flat", font=("Arial", 12))
+            e.grid(row=i, column=1, padx=5, pady=5)
+            entradas.append(e)
+
+        entry_nombre, entry_telefono, entry_ubicacion, entry_informacion = entradas
+
+        btn_guardar = tk.Button(campos_frame, text="GUARDAR CAMBIOS", bg=self.COLOR_BOTON, fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2")
+        btn_guardar.grid(row=4, column=0, columnspan=2, pady=15)
+
+        self.codigo_actual_proveedor = None
+
+        def actualizar_lista(event=None):
+            try:
+                cadena = entry_buscar.get().strip()
+                lista.delete(0, tk.END)
+
+                with ProductosDB._conn() as conn:
+                    if cadena:
+                        patron = '%' + cadena + '%'
+                        cur = conn.execute(
+                            "SELECT nombre, codigo, telefono, ubicacion, informacion FROM proveedores WHERE nombre LIKE ? OR codigo LIKE ? OR telefono LIKE ? LIMIT 10",
+                            (patron, patron, patron)
+                        )
+                    else:
+                        cur = conn.execute(
+                            "SELECT nombre, codigo, telefono, ubicacion, informacion FROM proveedores ORDER BY nombre LIMIT 10")
+
+                    for r in cur.fetchall():
+                        lista.insert(tk.END, f"{r['codigo']:<22}  {r['nombre']:<33}  {r['telefono']:<20}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al actualizar lista: {str(e)}")
+
+        def mostrar_campos_edicion(proveedor):
+            entry_nombre.delete(0, tk.END)
+            entry_nombre.insert(0, proveedor["nombre"])
+            entry_telefono.delete(0, tk.END)
+            entry_telefono.insert(0, proveedor["telefono"])
+            entry_ubicacion.delete(0, tk.END)
+            entry_ubicacion.insert(0, proveedor["ubicacion"])
+            entry_informacion.delete(0, tk.END)
+            entry_informacion.insert(0, proveedor["informacion"])
+            self.codigo_actual_proveedor = proveedor["codigo"]
+
+        def seleccionar_proveedor(event):
+            if lista.curselection():
+                seleccion = lista.get(lista.curselection())
+                codigo = seleccion[:22].strip()
+
+                with ProductosDB._conn() as conn:
+                    cur = conn.execute("SELECT * FROM proveedores WHERE codigo = ?", (codigo,))
+                    proveedor = cur.fetchone()
+                    if proveedor:
+                        mostrar_campos_edicion(proveedor)
+
+        def guardar_cambios():
+            if not self.codigo_actual_proveedor:
+                messagebox.showerror("Error", "Seleccione un proveedor primero.")
+                return
+
+            nuevo_nombre = entry_nombre.get().strip()
+            nuevo_telefono = entry_telefono.get().strip()
+            nueva_ubicacion = entry_ubicacion.get().strip()
+            nueva_informacion = entry_informacion.get().strip()
+
+            if not all([nuevo_nombre, nuevo_telefono, nueva_ubicacion, nueva_informacion]):
+                messagebox.showerror("Error", "Todos los campos son obligatorios.")
+                return
+
+            try:
+                with ProductosDB._conn() as conn:
+                    conn.execute(
+                        "UPDATE proveedores SET nombre=?, telefono=?, ubicacion=?, informacion=? WHERE codigo=?",
+                        (nuevo_nombre, nuevo_telefono, nueva_ubicacion, nueva_informacion, self.codigo_actual_proveedor)
+                    )
+                    conn.commit()
+
+                messagebox.showinfo("Éxito", f"Proveedor '{nuevo_nombre}' actualizado correctamente.")
+
+                for e in entradas:
+                    e.delete(0, tk.END)
+
+                self.codigo_actual_proveedor = None
+                entry_buscar.delete(0, tk.END)
+                actualizar_lista()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo actualizar el proveedor: {str(e)}")
+
+        entry_buscar.bind("<KeyRelease>", actualizar_lista)
+        lista.bind("<<ListboxSelect>>", seleccionar_proveedor)
+        btn_guardar.config(command=guardar_cambios)
+
+        actualizar_lista()
+
+    def mostrar_eliminar_proveedor(self):
+        for widget in self.panel_right.winfo_children():
+            widget.destroy()
+
+        self.activar_boton(self.button_proveedores)
+
+        tk.Label(self.panel_right, text="GESTION DE PROVEEDORES", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=20)
+
+        frame_botones = tk.Frame(self.panel_right, bg="#FFFFFF")
+        frame_botones.pack(pady=(0, 15))
+
+        btn_agregar = tk.Button(frame_botones, text="AGREGAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_agregar_proveedor)
+        btn_agregar.grid(row=0, column=0, padx=10)
+
+        btn_editar = tk.Button(frame_botones, text="EDITAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_editar_proveedor)
+        btn_editar.grid(row=0, column=1, padx=10)
+
+        btn_eliminar = tk.Button(frame_botones, text="ELIMINAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_eliminar_proveedor)
+        btn_eliminar.grid(row=0, column=2, padx=10)
+
+        linea = tk.Frame(self.panel_right, bg="gray", height=2)
+        linea.pack(fill="x", padx=0, pady=10)
+
+        panel_form = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_form.pack(fill="both", expand=True, padx=20, pady=10)
+
+        tk.Label(panel_form, text="ELIMINAR PROVEEDOR", font=("Arial", 16, "bold"), bg="#FFFFFF").pack(pady=5)
+
+        tk.Label(panel_form, text="Buscar (nombre, código o teléfono):", font=("Arial", 12, "bold"),bg="#FFFFFF").pack(pady=(5, 0))
+        entry_buscar = tk.Entry(panel_form, width=50, bg="#E6F3FF", relief="flat", font=("Arial", 12))
+        entry_buscar.pack(pady=5)
+
+        lista_frame = tk.Frame(panel_form, bg="#FFFFFF")
+        lista_frame.pack(pady=5)
+
+        encabezado = tk.Frame(lista_frame, bg="#E6F3FF")
+        encabezado.pack()
+
+        tk.Label(encabezado, text="CÓDIGO", font=("Arial", 11, "bold"), width=20, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="NOMBRE", font=("Arial", 11, "bold"), width=30, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="TELÉFONO", font=("Arial", 11, "bold"), width=20, anchor="w", bg="#E6F3FF").pack(side="left")
+
+        frame_lista_scroll = tk.Frame(lista_frame, bg="#FFFFFF")
+        frame_lista_scroll.pack(pady=5)
+
+        scroll = tk.Scrollbar(frame_lista_scroll)
+        scroll.pack(side="right", fill="y")
+
+        lista = tk.Listbox(frame_lista_scroll, width=80, height=5, font=("Courier New", 10), yscrollcommand=scroll.set)
+        lista.pack(side="left", padx=0)
+        scroll.config(command=lista.yview)
+
+        def actualizar_lista(event=None):
+            try:
+                cadena = entry_buscar.get().strip()
+                lista.delete(0, tk.END)
+
+                with ProductosDB._conn() as conn:
+                    if cadena:
+                        patron = '%' + cadena + '%'
+                        cur = conn.execute(
+                            "SELECT nombre, codigo, telefono FROM proveedores WHERE nombre LIKE ? OR codigo LIKE ? OR telefono LIKE ? LIMIT 10",
+                            (patron, patron, patron)
+                        )
+                    else:
+                        cur = conn.execute("SELECT nombre, codigo, telefono FROM proveedores ORDER BY nombre LIMIT 10")
+
+                    for r in cur.fetchall():
+                        lista.insert(tk.END, f"{r['codigo']:<22}  {r['nombre']:<33}  {r['telefono']:<20}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al actualizar lista: {str(e)}")
+
+        def obtener_codigo_seleccionado():
+            if not lista.curselection():
+                return None
+            seleccion = lista.get(lista.curselection())
+            return seleccion[:22].strip()
+
+        def eliminar_proveedor():
+            codigo = obtener_codigo_seleccionado()
+
+            if not codigo:
+                messagebox.showwarning("Advertencia", "Seleccione un proveedor para eliminar.")
+                return
+
+            try:
+                with ProductosDB._conn() as conn:
+                    cur = conn.execute("SELECT nombre FROM proveedores WHERE codigo=?", (codigo,))
+                    proveedor = cur.fetchone()
+                    nombre = proveedor['nombre'] if proveedor else codigo
+
+                    confirmar = messagebox.askyesno("Confirmar eliminación",
+                                                    f"¿Está seguro de eliminar el proveedor?\n\n"
+                                                    f"Código: {codigo}\n"
+                                                    f"Nombre: {nombre}\n\n"
+                                                    f"Esta acción no se puede deshacer.")
+
+                    if confirmar:
+                        cursor = conn.execute("DELETE FROM proveedores WHERE codigo=?", (codigo,))
+                        conn.commit()
+
+                        if cursor.rowcount > 0:
+                            messagebox.showinfo("Éxito", f"Proveedor '{nombre}' eliminado correctamente.")
+                            actualizar_lista()
+                            entry_buscar.focus()
+                        else:
+                            messagebox.showerror("Error", f"No se encontró el proveedor con código {codigo}.")
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo eliminar el proveedor:\n{str(e)}")
+
+        entry_buscar.bind("<KeyRelease>", actualizar_lista)
+        lista.bind("<Delete>", lambda e: eliminar_proveedor())
+        lista.bind("<Double-Button-1>", lambda e: eliminar_proveedor())
+
+        btn_eliminar_prov = tk.Button(panel_form,text="ELIMINAR PROVEEDOR",bg=self.COLOR_BOTON,fg="white",font=("Arial", 11, "bold"),relief="flat",cursor="hand2",command=eliminar_proveedor)
+        btn_eliminar_prov.pack(pady=15)
+
+        entry_buscar.focus()
+        actualizar_lista()
+
+    def mostrar_categorias(self):
+        for widget in self.panel_right.winfo_children():
+            if isinstance(widget, tk.Frame) and widget.winfo_y() > 150:
+                widget.destroy()
+
+        panel_categorias = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_categorias.pack(fill="both", expand=True, padx=20, pady=10)
+
+        tk.Label(panel_categorias, text="GESTIÓN DE CATEGORÍAS", font=("Arial", 16, "bold"), bg="#FFFFFF").pack(pady=10)
+
+        frame_acciones = tk.Frame(panel_categorias, bg="#FFFFFF")
+        frame_acciones.pack(pady=10)
+
+        btn_crear = tk.Button(frame_acciones, text="CREAR CATEGORÍA", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_crear_categoria)
+        btn_crear.grid(row=0, column=0, padx=10)
+
+        btn_eliminar_cat = tk.Button(frame_acciones, text="ELIMINAR CATEGORÍA", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_eliminar_categoria)
+        btn_eliminar_cat.grid(row=0, column=1, padx=10)
+
+    def mostrar_crear_categoria(self):
+        for widget in self.panel_right.winfo_children():
+            if isinstance(widget, tk.Frame) and widget.winfo_y() > 150:
+                for child in widget.winfo_children():
+                    if isinstance(child, tk.Frame) and len(child.winfo_children()) > 0:
+                        try:
+                            if child.winfo_children()[0].cget("text") in ["CREAR NUEVA CATEGORÍA","ELIMINAR CATEGORÍA"]:
+                                child.destroy()
+                        except:
+                            pass
+
+        panel_categorias = None
+        for widget in self.panel_right.winfo_children():
+            if isinstance(widget, tk.Frame) and widget.winfo_y() > 150:
+                panel_categorias = widget
+                break
+
+        if not panel_categorias:
+            return
+
+        panel_form = tk.Frame(panel_categorias, bg="#FFFFFF")
+        panel_form.pack(fill="both", expand=True, padx=20, pady=20)
+
+        tk.Label(panel_form, text="CREAR NUEVA CATEGORÍA", font=("Arial", 14, "bold"), bg="#FFFFFF").pack(pady=10)
+
+        campos_frame = tk.Frame(panel_form, bg="#FFFFFF")
+        campos_frame.pack(pady=20)
+
+        tk.Label(campos_frame, text="NOMBRE:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0,column=0,padx=5,pady=10,sticky="e")
+        entry_nombre = tk.Entry(campos_frame, width=40, bg="#E6F3FF", relief="flat", font=("Arial", 12))
+        entry_nombre.grid(row=0, column=1, padx=5, pady=10)
+
+        def guardar_categoria():
+            nombre = entry_nombre.get().strip()
+
+            if not nombre:
+                messagebox.showerror("Error", "El nombre de la categoría es obligatorio.")
+                return
+
+            try:
+                AgregarCategori.agregar_categoria(nombre)
+                messagebox.showinfo("Éxito", f"Categoría '{nombre}' creada correctamente.")
+                entry_nombre.delete(0, tk.END)
+                entry_nombre.focus()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo crear la categoría:\n{str(e)}\n\nPosiblemente ya existe.")
+
+        btn_guardar = tk.Button(campos_frame, text="CREAR CATEGORÍA", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=guardar_categoria, width=20)
+        btn_guardar.grid(row=1, column=0, columnspan=2, pady=20)
+
+        entry_nombre.focus()
+
+    def mostrar_eliminar_categoria(self):
+        for widget in self.panel_right.winfo_children():
+            if isinstance(widget, tk.Frame) and widget.winfo_y() > 150:
+                for child in widget.winfo_children():
+                    if isinstance(child, tk.Frame) and len(child.winfo_children()) > 0:
+                        try:
+                            if child.winfo_children()[0].cget("text") in ["CREAR NUEVA CATEGORÍA","ELIMINAR CATEGORÍA"]:
+                                child.destroy()
+                        except:
+                            pass
+
+        panel_categorias = None
+        for widget in self.panel_right.winfo_children():
+            if isinstance(widget, tk.Frame) and widget.winfo_y() > 150:
+                panel_categorias = widget
+                break
+
+        if not panel_categorias:
+            return
+
+        panel_form = tk.Frame(panel_categorias, bg="#FFFFFF")
+        panel_form.pack(fill="both", expand=True, padx=20, pady=20)
+
+        tk.Label(panel_form, text="ELIMINAR CATEGORÍA", font=("Arial", 14, "bold"), bg="#FFFFFF").pack(pady=5)
+
+        tk.Label(panel_form, text="Seleccione la categoría a eliminar:", font=("Arial", 12, "bold"),bg="#FFFFFF").pack(pady=(10, 5))
+
+        lista_frame = tk.Frame(panel_form, bg="#FFFFFF")
+        lista_frame.pack(pady=5)
+
+        encabezado = tk.Frame(lista_frame, bg="#E6F3FF")
+        encabezado.pack()
+
+        tk.Label(encabezado, text="NOMBRE:", font=("Arial", 11, "bold"), width=55, anchor="w",bg="#E6F3FF").pack(side="left")
+
+        frame_lista_scroll = tk.Frame(lista_frame, bg="#FFFFFF")
+        frame_lista_scroll.pack(pady=5)
+
+        scroll = tk.Scrollbar(frame_lista_scroll)
+        scroll.pack(side="right", fill="y")
+
+        lista = tk.Listbox(frame_lista_scroll, width=60, height=4, font=("Arial", 11), yscrollcommand=scroll.set)
+        lista.pack(side="left", padx=0)
+        scroll.config(command=lista.yview)
+
+        def cargar_categorias():
+            lista.delete(0, tk.END)
+            categorias = ObtenerCategorias.obtener_categorias()
+            for cat in categorias:
+                lista.insert(tk.END, cat)
+
+        def obtener_categoria_seleccionada():
+            if not lista.curselection():
+                return None
+            return lista.get(lista.curselection())
+
+        def eliminar_categoria():
+            nombre = obtener_categoria_seleccionada()
+
+            if not nombre:
+                messagebox.showwarning("Advertencia", "Seleccione una categoría para eliminar.")
+                return
+
+            try:
+                with ProductosDB._conn() as conn:
+                    cur = conn.execute("SELECT COUNT(*) as total FROM productos WHERE categoria = ?", (nombre,))
+                    resultado = cur.fetchone()
+                    total_productos = resultado['total']
+
+                    if total_productos > 0:
+                        messagebox.showerror("Error",
+                                             f"No se puede eliminar la categoría '{nombre}'.\n\n"
+                                             f"Hay {total_productos} producto(s) usando esta categoría.\n"
+                                             f"Elimine o reasigne esos productos primero.")
+                        return
+
+                    confirmar = messagebox.askyesno("Confirmar eliminación",
+                                                    f"¿Está seguro de eliminar la categoría?\n\n"
+                                                    f"Categoría: {nombre}\n\n"
+                                                    f"Esta acción no se puede deshacer.")
+
+                    if confirmar:
+                        cursor = conn.execute("DELETE FROM categorias WHERE nombre=?", (nombre,))
+                        conn.commit()
+
+                        if cursor.rowcount > 0:
+                            messagebox.showinfo("Éxito", f"Categoría '{nombre}' eliminada correctamente.")
+                            cargar_categorias()
+                        else:
+                            messagebox.showerror("Error", f"No se encontró la categoría '{nombre}'.")
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo eliminar la categoría:\n{str(e)}")
+
+        lista.bind("<Delete>", lambda e: eliminar_categoria())
+        lista.bind("<Double-Button-1>", lambda e: eliminar_categoria())
+
+        btn_eliminar_cat = tk.Button(panel_form,text="ELIMINAR CATEGORÍA",bg=self.COLOR_BOTON,fg="white",font=("Arial", 11, "bold"),relief="flat",cursor="hand2",command=eliminar_categoria)
+        btn_eliminar_cat.pack(pady=15)
+
+        cargar_categorias()
 
     def cerrar_sesion(self):
         respuesta = messagebox.askyesno("Confirmación", "¿Está seguro que desea salir?")
