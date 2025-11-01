@@ -197,8 +197,8 @@ class Buscar(ProductosDB):
         patron = '%' + cadena + '%'
         with ProductosDB._conn() as conn:
             cur = conn.execute(
-                "SELECT nombre, codigo, precio_venta AS precio, categoria FROM productos WHERE nombre LIKE ? OR codigo LIKE ? LIMIT 10",
-                (patron, patron)
+                "SELECT nombre, codigo, precio_venta AS precio, categoria FROM productos WHERE nombre LIKE ? OR codigo LIKE ? OR categoria LIKE ? LIMIT 10",
+                (patron, patron, patron)
             )
             return cur.fetchall()
 
@@ -458,35 +458,56 @@ class App(tk.Tk):
             seleccion = lista_productos.get(lista_productos.curselection())
             codigo = seleccion[:22].strip()
             producto = ObtenerCodigo.obtener_por_codigo(codigo)
-            if producto:
-                for item in self.carrito_items:
-                    if item["codigo"] == producto["codigo"]:
-                        item["cantidad"] += 1
-                        break
-                else:
-                    self.carrito_items.append({
-                        "codigo": producto["codigo"],
-                        "nombre": producto["nombre"],
-                        "precio": float(producto["precio_venta"]),
-                        "cantidad": 1
-                    })
-
-                carrito.delete(0, tk.END)
-                total = 0
-                for item in self.carrito_items:
-                    subtotal = item["cantidad"] * item["precio"]
-                    total += subtotal
-                    carrito.insert(tk.END,f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
-                subtotal_var.set(total)
+            if not producto:
+                return
+            stock_disponible = producto["cantidad"]
+            cantidad_a_sumar = 1
+            cantidad_en_carrito = 0
+            item_existente = None
+            for item in self.carrito_items:
+                if item["codigo"] == producto["codigo"]:
+                    cantidad_en_carrito = item["cantidad"]
+                    item_existente = item
+                    break
+            total_solicitado = cantidad_en_carrito + cantidad_a_sumar
+            if total_solicitado > stock_disponible:
+                messagebox.showerror(
+                    "Stock Agotado",
+                    f"No se puede agregar más de {producto['nombre']}.\n\n"
+                    f"Límite de stock: {stock_disponible}\n"
+                    f"Actualmente en carrito: {cantidad_en_carrito}"
+                )
+                return
+            if item_existente:
+                item_existente["cantidad"] += cantidad_a_sumar
+            else:
+                self.carrito_items.append({
+                    "codigo": producto["codigo"],
+                    "nombre": producto["nombre"],
+                    "precio": float(producto["precio_venta"]),
+                    "cantidad": cantidad_a_sumar
+                })
+            carrito.delete(0, tk.END)
+            total = 0
+            for item in self.carrito_items:
+                subtotal = item["cantidad"] * item["precio"]
+                total += subtotal
+                carrito.insert(tk.END,
+                               f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
+            subtotal_var.set(total)
 
         def finalizar_venta():
             if not self.carrito_items:
                 messagebox.showerror("Error", "El carrito está vacío.")
                 return
-            detalle = [f"{i['cantidad']} x {i['nombre']} @Q.{i['precio']}" for i in self.carrito_items]
             total = subtotal_var.get()
+            detalle = [f"{i['cantidad']} x {i['nombre']} @Q.{i['precio']}" for i in self.carrito_items]
             RegistrarVenta.registrar_venta(total, detalle)
-            messagebox.showinfo("Éxito", f"Venta registrada correctamente. Total: Q.{total:.2f}")
+
+            for item in self.carrito_items:
+                ActualizarStock.actualizar_stock(item['codigo'], item['cantidad'])
+
+            messagebox.showinfo("Éxito", f"Venta registrada y stock actualizado. Total: Q.{total:.2f}")
             carrito.delete(0, tk.END)
             subtotal_var.set(0.0)
             self.carrito_items.clear()
