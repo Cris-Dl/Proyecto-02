@@ -3,9 +3,6 @@ from tkinter import messagebox
 import sqlite3
 from datetime import datetime
 
-import sqlite3
-from datetime import datetime
-
 
 class Productos:
     def __init__(self, codigo, nombre, precio_compra, precio_venta, categoria, cantidad):
@@ -628,7 +625,7 @@ class App(tk.Tk):
         button_editar=tk.Button(panel_buttons, text="EDITAR PRODUCTO", bg=self.COLOR_BOTON, fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", width=25, command=self.mostrar_editar_producto)
         button_editar.grid(row=0, column=1, padx=10)
 
-        btn_eliminar = tk.Button(panel_buttons, text="ELIMINAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25)
+        btn_eliminar = tk.Button(panel_buttons, text="ELIMINAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_eliminar_producto)
         btn_eliminar.grid(row=0, column=2, padx=10, pady=5)
 
         linea = tk.Frame(self.panel_right, bg="gray", height=2)
@@ -662,6 +659,7 @@ class App(tk.Tk):
 
         linea = tk.Frame(self.panel_right, bg="gray", height=2)
         linea.pack(fill="x", padx=0, pady=10)
+
     def mostrar_agregar_producto(self):
         for widget in self.panel_right.winfo_children():
             if isinstance(widget, tk.Frame) and widget.winfo_y() > 150:
@@ -730,7 +728,7 @@ class App(tk.Tk):
         button_editar = tk.Button(panel_buttons, text="EDITAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_editar_producto)
         button_editar.grid(row=0, column=1, padx=10)
 
-        btn_eliminar = tk.Button(panel_buttons, text="ELIMINAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25)
+        btn_eliminar = tk.Button(panel_buttons, text="ELIMINAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_eliminar_producto)
         btn_eliminar.grid(row=0, column=2, padx=10, pady=5)
 
         linea = tk.Frame(self.panel_right, bg="gray", height=2)
@@ -778,7 +776,9 @@ class App(tk.Tk):
         entry_nombre, entry_precio_compra, entry_precio_venta, entry_categoria, entry_cantidad = entradas
 
         btn_guardar = tk.Button(campos_frame, text="GUARDAR CAMBIOS", bg=self.COLOR_BOTON, fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2")
-        btn_guardar.grid(row=4, column=0, columnspan=2, pady=15)
+        btn_guardar.grid(row=5, column=0, columnspan=2, pady=15)
+
+        self.codigo_actual_edicion = None
 
         def actualizar_lista(event=None):
             cadena = entry_buscar.get()
@@ -798,7 +798,7 @@ class App(tk.Tk):
             entry_categoria.insert(0, producto["categoria"])
             entry_cantidad.delete(0, tk.END)
             entry_cantidad.insert(0, producto["cantidad"])
-            panel_form.codigo_actual = producto["codigo"]
+            self.codigo_actual_edicion = producto["codigo"]
 
         def seleccionar_producto(event):
             if lista.curselection():
@@ -809,36 +809,145 @@ class App(tk.Tk):
                     mostrar_campos_edicion(producto)
 
         def guardar_cambios():
-            if not hasattr(panel_form, "codigo_actual"):
+            if not self.codigo_actual_edicion:
                 messagebox.showerror("Error", "Seleccione un producto primero.")
                 return
 
-            nuevo_nombre = entry_nombre.get()
-            nuevo_precio_compra = entry_precio_compra.get()
-            nuevo_precio_venta = entry_precio_venta.get()
-            nueva_categoria = entry_categoria.get()
-            nueva_cantidad = entry_cantidad.get()
+            nuevo_nombre = entry_nombre.get().strip()
+            nuevo_precio_compra = entry_precio_compra.get().strip()
+            nuevo_precio_venta = entry_precio_venta.get().strip()
+            nueva_categoria = entry_categoria.get().strip()
+            nueva_cantidad = entry_cantidad.get().strip()
 
             if not all([nuevo_nombre, nuevo_precio_compra, nuevo_precio_venta, nueva_categoria, nueva_cantidad]):
                 messagebox.showerror("Error", "Todos los campos son obligatorios.")
                 return
 
-            ModificarProducto.modificar_producto(
-                codigo=panel_form.codigo_actual,
-                nombre=nuevo_nombre,
-                precio_compra=float(nuevo_precio_compra),
-                precio_venta=float(nuevo_precio_venta),
-                categoria=nueva_categoria,
-                cantidad=float(nueva_cantidad)
-            )
+            try:
+                ModificarProducto.modificar_producto(codigo=self.codigo_actual_edicion,nombre=nuevo_nombre,precio_compra=float(nuevo_precio_compra),precio_venta=float(nuevo_precio_venta),categoria=nueva_categoria,cantidad=float(nueva_cantidad))
 
-            messagebox.showinfo("Éxito", f"Producto '{nuevo_nombre}' actualizado correctamente.")
-            entry_buscar.delete(0, tk.END)
-            actualizar_lista()
+                messagebox.showinfo("Éxito", f"Producto '{nuevo_nombre}' actualizado correctamente.")
+
+                for e in entradas:
+                    e.delete(0, tk.END)
+
+                self.codigo_actual_edicion = None
+                entry_buscar.delete(0, tk.END)
+                actualizar_lista()
+
+            except ValueError:
+                messagebox.showerror("Error", "Los precios y cantidad deben ser números válidos.")
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo actualizar el producto: {str(e)}")
 
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         lista.bind("<<ListboxSelect>>", seleccionar_producto)
         btn_guardar.config(command=guardar_cambios)
+
+    def mostrar_eliminar_producto(self):
+        for widget in self.panel_right.winfo_children():
+            widget.destroy()
+
+        self.activar_boton(self.button_inventario)
+
+        tk.Label(self.panel_right, text="INVENTARIO DE PRODUCTOS", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=15)
+
+        panel_buttons = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_buttons.pack(pady=5)
+
+        button_agregar = tk.Button(panel_buttons, text="AGREGAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_agregar_producto)
+        button_agregar.grid(row=0, column=0, padx=10)
+
+        button_editar = tk.Button(panel_buttons, text="EDITAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_editar_producto)
+        button_editar.grid(row=0, column=1, padx=10)
+
+        btn_eliminar = tk.Button(panel_buttons, text="ELIMINAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_eliminar_producto)
+        btn_eliminar.grid(row=0, column=2, padx=10, pady=5)
+
+        linea = tk.Frame(self.panel_right, bg="gray", height=2)
+        linea.pack(fill="x", padx=0, pady=20)
+
+        panel_form = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_form.pack(fill="both", expand=True, padx=20, pady=10)
+
+        tk.Label(panel_form, text="ELIMINAR PRODUCTO", font=("Arial", 16, "bold"), bg="#FFFFFF").pack(pady=5)
+
+        tk.Label(panel_form, text="Buscar (nombre, código o categoría):", font=("Arial", 12, "bold"),bg="#FFFFFF").pack(pady=(5, 0))
+        entry_buscar = tk.Entry(panel_form, width=50, bg="#E6F3FF", relief="flat", font=("Arial", 12))
+        entry_buscar.pack(pady=5)
+
+        lista_frame = tk.Frame(panel_form, bg="#FFFFFF")
+        lista_frame.pack(pady=5)
+
+        encabezado = tk.Frame(lista_frame, bg="#E6F3FF")
+        encabezado.pack()
+
+        tk.Label(encabezado, text="CÓDIGO", font=("Arial", 11, "bold"), width=20, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="NOMBRE", font=("Arial", 11, "bold"), width=30, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="CATEGORÍA", font=("Arial", 11, "bold"), width=20, anchor="w", bg="#E6F3FF").pack(side="left")
+
+        frame_lista_scroll = tk.Frame(lista_frame, bg="#FFFFFF")
+        frame_lista_scroll.pack(pady=5)
+
+        scroll = tk.Scrollbar(frame_lista_scroll)
+        scroll.pack(side="right", fill="y")
+
+        lista = tk.Listbox(frame_lista_scroll, width=80, height=5, font=("Courier New", 10), yscrollcommand=scroll.set)
+        lista.pack(side="left", padx=0)
+        scroll.config(command=lista.yview)
+
+        def actualizar_lista(event=None):
+            try:
+                cadena = entry_buscar.get().strip()
+                resultados = Buscar.buscar_por_cadena(cadena) if cadena else []
+
+                lista.delete(0, tk.END)
+
+                for r in resultados:
+                    lista.insert(tk.END, f"{r['codigo']:<22}  {r['nombre']:<33}  {r['categoria']:<20}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al actualizar lista: {str(e)}")
+
+        def obtener_codigo_seleccionado():
+            if not lista.curselection():
+                return None
+            seleccion = lista.get(lista.curselection())
+            return seleccion[:22].strip()
+
+        def eliminar_producto():
+            codigo = obtener_codigo_seleccionado()
+
+            if not codigo:
+                messagebox.showwarning("Advertencia", "Seleccione un producto para eliminar.")
+                return
+
+            try:
+                producto = ObtenerCodigo.obtener_por_codigo(codigo)
+                nombre = producto['nombre'] if producto else codigo
+
+                confirmar = messagebox.askyesno("Confirmar eliminación",f"¿Está seguro de eliminar el producto?\n\n"f"Código: {codigo}\n"f"Nombre: {nombre}\n\n"f"Esta acción no se puede deshacer.")
+
+                if confirmar:
+                    with ProductosDB._conn() as conn:
+                        cursor = conn.execute("DELETE FROM productos WHERE codigo=?", (codigo,))
+                        conn.commit()
+
+                        if cursor.rowcount > 0:
+                            messagebox.showinfo("Éxito",f"Producto '{nombre}' eliminado correctamente.")
+                            actualizar_lista()
+                            entry_buscar.focus()
+                        else:
+                            messagebox.showerror("Error",f"No se encontró el producto con código {codigo}.")
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo eliminar el producto:\n{str(e)}")
+
+        entry_buscar.bind("<KeyRelease>", actualizar_lista)
+        lista.bind("<Delete>", lambda e: eliminar_producto())
+        lista.bind("<Double-Button-1>", lambda e: eliminar_producto())
+
+        btn_eliminar_prod = tk.Button(panel_form,text="ELIMINAR PRODUCTO",bg=self.COLOR_BOTON,fg="white",font=("Arial", 11, "bold"),relief="flat",cursor="hand2",command=eliminar_producto)
+        btn_eliminar_prod.pack(pady=15)
+        entry_buscar.focus()
 
     def cerrar_sesion(self):
         respuesta = messagebox.askyesno("Confirmación", "¿Está seguro que desea salir?")
@@ -847,6 +956,7 @@ class App(tk.Tk):
             root = tk.Tk()
             Login(root)
             root.mainloop()
+
 if __name__ == "__main__":
     root=tk.Tk()
     app=Login(root)
