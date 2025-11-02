@@ -527,6 +527,17 @@ class App(tk.Tk):
             subtotal_var.set(0.0)
             self.carrito_items.clear()
 
+        def agregar_enter(event):
+            actualizar_lista()
+            if lista_productos.size() > 0:
+                lista_productos.selection_clear(0, tk.END)
+                lista_productos.select_set(0)
+                lista_productos.activate(0)
+                agregar_al_carrito()
+                entry_buscar.delete(0, tk.END)
+                actualizar_lista()
+
+        entry_buscar.bind("<Return>", agregar_enter)
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         lista_productos.bind("<Double-Button-1>", agregar_al_carrito)
 
