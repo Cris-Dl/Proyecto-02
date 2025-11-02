@@ -729,7 +729,7 @@ class App(tk.Tk):
 
         tk.Label(panel_form, text="CATEGORÍA:", font=("Arial", 12, "bold"), bg="#FFFFFF").place(x=50, y=200)
         combo_categoria = ttk.Combobox(panel_form, width=38, font=("Arial", 12), state="readonly",style="Custom.TCombobox")
-        combo_categoria.place(x=200, y=200, height=25)
+        combo_categoria.place(x=200, y=200, height=30)
 
         categorias = ObtenerCategorias.obtener_categorias()
         combo_categoria['values'] = categorias
