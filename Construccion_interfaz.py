@@ -1,8 +1,18 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 import sqlite3
 from datetime import datetime
 
+
+def configurar_estilo_combobox():
+    style = ttk.Style()
+    style.theme_use('clam')
+
+    style.configure('Custom.TCombobox',fieldbackground='#E6F3FF',background='#E6F3FF',bordercolor='#E6F3FF',arrowcolor='#333333',borderwidth=1,relief='flat',padding=5)
+
+    style.map('Custom.TCombobox',fieldbackground=[('readonly', '#E6F3FF'), ('disabled', '#E6F3FF')],background=[('readonly', '#E6F3FF')],bordercolor=[('focus', '#E6F3FF')],relief=[('focus', 'flat')])
+
+    style.configure('Custom.TCombobox.Listbox',background='#E6F3FF',fieldbackground='#E6F3FF',selectbackground='#007BFF',selectforeground='white')
 
 class Productos:
     def __init__(self, codigo, nombre, precio_compra, precio_venta, categoria, cantidad):
@@ -328,6 +338,10 @@ class Login:
             self.root.destroy()
             app2=App()
             app2.mainloop()
+        elif user == "CAJERA" and password == "5678":
+            self.root.destroy()
+            app_cajera = AppCajera()
+            app_cajera.mainloop()
         else:
             messagebox.showerror("ERROR","Error en sus credenciales, inténtelo de nuevo.")
 
@@ -343,6 +357,7 @@ class App(tk.Tk):
         self.COLOR_SELECCION = "#0056b3"
         self.protocol("WM_DELETE_WINDOW", self.cerrar_sesion)
         self.state('zoomed')
+        configurar_estilo_combobox()
 
         self.panel_left = tk.Frame(self, bg="#1E90FF", width=200, height=500)
         self.panel_left.pack(side="left", fill="y")
@@ -713,20 +728,24 @@ class App(tk.Tk):
         entry_precio_venta.place(x=200, y=160, height=25)
 
         tk.Label(panel_form, text="CATEGORÍA:", font=("Arial", 12, "bold"), bg="#FFFFFF").place(x=50, y=200)
-        entry_categoria = tk.Entry(panel_form, width=40, bg="#E6F3FF", relief="flat", font=("Arial", 12))
-        entry_categoria.place(x=200, y=200, height=25)
+        combo_categoria = ttk.Combobox(panel_form, width=38, font=("Arial", 12), state="readonly",style="Custom.TCombobox")
+        combo_categoria.place(x=200, y=200, height=25)
+
+        categorias = ObtenerCategorias.obtener_categorias()
+        combo_categoria['values'] = categorias
+        if categorias:
+            combo_categoria.current(0)
 
         tk.Label(panel_form, text="CANTIDAD:", font=("Arial", 12, "bold"), bg="#FFFFFF").place(x=50, y=240)
         entry_cantidad = tk.Entry(panel_form, width=40, bg="#E6F3FF", relief="flat", font=("Arial", 12))
         entry_cantidad.place(x=200, y=240, height=25)
 
         def guardar_producto():
-            if not all([entry_codigo.get(), entry_nombre.get(), entry_precio.get(), entry_categoria.get(),
-                        entry_cantidad.get()]):
+            if not all([entry_codigo.get(), entry_nombre.get(), entry_precio.get(), combo_categoria.get(),entry_cantidad.get()]):
                 messagebox.showerror("Error", "Todos los campos son obligatorios.")
                 return
 
-            producto = Productos(codigo=entry_codigo.get(), nombre=entry_nombre.get(),precio_venta=float(entry_precio_venta.get()), precio_compra=float(entry_precio.get()),categoria=entry_categoria.get(), cantidad=float(entry_cantidad.get()))
+            producto = Productos(codigo=entry_codigo.get(), nombre=entry_nombre.get(),precio_venta=float(entry_precio_venta.get()), precio_compra=float(entry_precio.get()),categoria=combo_categoria.get(), cantidad=float(entry_cantidad.get()))
             GuardarProducto.guardar(producto)
             messagebox.showinfo("Éxito", f"Producto '{producto.nombre}' agregado correctamente.")
 
@@ -789,15 +808,28 @@ class App(tk.Tk):
         campos_frame = tk.Frame(panel_form, bg="#FFFFFF")
         campos_frame.pack(pady=10)
 
-        etiquetas = ["NOMBRE:", "PRECIO COMPRA:", "PRECIO VENTA:", "CATEGORÍA:", "CANTIDAD:"]
-        entradas = []
-        for i, texto in enumerate(etiquetas):
-            tk.Label(campos_frame, text=texto, font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=i, column=0, padx=5,pady=5, sticky="e")
-            e = tk.Entry(campos_frame, width=35, bg="#E6F3FF", relief="flat", font=("Arial", 12))
-            e.grid(row=i, column=1, padx=5, pady=5)
-            entradas.append(e)
+        tk.Label(campos_frame, text="NOMBRE:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=0, padx=5,pady=5, sticky="e")
+        entry_nombre = tk.Entry(campos_frame, width=35, bg="#E6F3FF", relief="flat", font=("Arial", 12))
+        entry_nombre.grid(row=0, column=1, padx=5, pady=5)
 
-        entry_nombre, entry_precio_compra, entry_precio_venta, entry_categoria, entry_cantidad = entradas
+        tk.Label(campos_frame, text="PRECIO COMPRA:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=1, column=0,padx=5, pady=5,sticky="e")
+        entry_precio_compra = tk.Entry(campos_frame, width=35, bg="#E6F3FF", relief="flat", font=("Arial", 12))
+        entry_precio_compra.grid(row=1, column=1, padx=5, pady=5)
+
+        tk.Label(campos_frame, text="PRECIO VENTA:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=2, column=0,padx=5, pady=5,sticky="e")
+        entry_precio_venta = tk.Entry(campos_frame, width=35, bg="#E6F3FF", relief="flat", font=("Arial", 12))
+        entry_precio_venta.grid(row=2, column=1, padx=5, pady=5)
+
+        tk.Label(campos_frame, text="CATEGORÍA:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=3, column=0,padx=5, pady=5,sticky="e")
+        combo_categoria = ttk.Combobox(campos_frame, width=33, font=("Arial", 12), state="readonly")
+        combo_categoria.grid(row=3, column=1, padx=5, pady=5)
+
+        categorias = ObtenerCategorias.obtener_categorias()
+        combo_categoria['values'] = categorias
+
+        tk.Label(campos_frame, text="CANTIDAD:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=4, column=0, padx=5,pady=5, sticky="e")
+        entry_cantidad = tk.Entry(campos_frame, width=35, bg="#E6F3FF", relief="flat", font=("Arial", 12))
+        entry_cantidad.grid(row=4, column=1, padx=5, pady=5)
 
         btn_guardar = tk.Button(campos_frame, text="GUARDAR CAMBIOS", bg=self.COLOR_BOTON, fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2")
         btn_guardar.grid(row=5, column=0, columnspan=2, pady=15)
@@ -818,8 +850,11 @@ class App(tk.Tk):
             entry_precio_compra.insert(0, producto["precio_compra"])
             entry_precio_venta.delete(0, tk.END)
             entry_precio_venta.insert(0, producto["precio_venta"])
-            entry_categoria.delete(0, tk.END)
-            entry_categoria.insert(0, producto["categoria"])
+            categoria_actual = producto["categoria"]
+            if categoria_actual in combo_categoria['values']:
+                combo_categoria.set(categoria_actual)
+            else:
+                combo_categoria.set('')
             entry_cantidad.delete(0, tk.END)
             entry_cantidad.insert(0, producto["cantidad"])
             self.codigo_actual_edicion = producto["codigo"]
@@ -840,7 +875,7 @@ class App(tk.Tk):
             nuevo_nombre = entry_nombre.get().strip()
             nuevo_precio_compra = entry_precio_compra.get().strip()
             nuevo_precio_venta = entry_precio_venta.get().strip()
-            nueva_categoria = entry_categoria.get().strip()
+            nueva_categoria = combo_categoria.get().strip()
             nueva_cantidad = entry_cantidad.get().strip()
 
             if not all([nuevo_nombre, nuevo_precio_compra, nuevo_precio_venta, nueva_categoria, nueva_cantidad]):
@@ -852,8 +887,11 @@ class App(tk.Tk):
 
                 messagebox.showinfo("Éxito", f"Producto '{nuevo_nombre}' actualizado correctamente.")
 
-                for e in entradas:
-                    e.delete(0, tk.END)
+                entry_nombre.delete(0, tk.END)
+                entry_precio_compra.delete(0, tk.END)
+                entry_precio_venta.delete(0, tk.END)
+                combo_categoria.set('')
+                entry_cantidad.delete(0, tk.END)
 
                 self.codigo_actual_edicion = None
                 entry_buscar.delete(0, tk.END)
@@ -1503,6 +1541,234 @@ class App(tk.Tk):
         btn_eliminar_cat.pack(pady=15)
 
         cargar_categorias()
+
+    def cerrar_sesion(self):
+        respuesta = messagebox.askyesno("Confirmación", "¿Está seguro que desea salir?")
+        if respuesta:
+            self.destroy()
+            root = tk.Tk()
+            Login(root)
+            root.mainloop()
+
+
+class AppCajera(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("MiniMarket - CAJERA")
+        self.geometry("1200x600")
+        self.resizable(True, True)
+        self.configure(bg="#FFFFFF")
+        self.COLOR_FONDO = "#1E90FF"
+        self.COLOR_BOTON = "#007BFF"
+        self.COLOR_SELECCION = "#0056b3"
+        self.protocol("WM_DELETE_WINDOW", self.cerrar_sesion)
+        self.state('zoomed')
+
+        self.panel_left = tk.Frame(self, bg="#1E90FF", width=200, height=500)
+        self.panel_left.pack(side="left", fill="y")
+
+        self.panel_right = tk.Frame(self, bg="#FFFFFF")
+        self.panel_right.pack(side="right", fill="both", expand=True)
+
+        self.imagen = tk.PhotoImage(file="2.png")
+        self.label_logo = tk.Label(self.panel_left, image=self.imagen, bg="#1E90FF")
+        self.label_logo.place(x=10, y=20)
+        self.label_logo.bind("<Button-1>", self.mostrar_menu_principal)
+
+        self.button_ventas = tk.Button(self.panel_left, text="VENTAS", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_ventas)
+        self.button_ventas.place(x=0, y=150, height=35)
+
+        self.button_inventario = tk.Button(self.panel_left, text="INVENTARIO", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_inventario)
+        self.button_inventario.place(x=0, y=220, height=35)
+
+        self.button_close = tk.Button(self.panel_left, text="CERRAR SESIÓN", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.cerrar_sesion)
+        self.button_close.place(x=0, y=550, height=35)
+
+        self.botones = [self.button_ventas, self.button_inventario]
+
+        self.mostrar_menu_principal()
+
+    def activar_boton(self, boton):
+        for b in self.botones:
+            b.config(bg=self.COLOR_BOTON)
+        boton.config(bg=self.COLOR_SELECCION)
+
+    def limpiar_panel(self):
+        for widget in self.panel_right.winfo_children():
+            widget.destroy()
+
+    def mostrar_menu_principal(self, event=None):
+        self.limpiar_panel()
+        tk.Label(self.panel_right, text="MENÚ PRINCIPAL - CAJERA", font=("Arial", 22, "bold"), bg="#FFFFFF").pack(pady=50)
+        tk.Label(self.panel_right, text="¡Bienvenido al MiniMarket!", font=("Arial", 16), bg="#FFFFFF").pack(pady=20)
+        for b in self.botones:
+            b.config(bg=self.COLOR_BOTON)
+
+    def mostrar_ventas(self):
+        self.activar_boton(self.button_ventas)
+        self.limpiar_panel()
+
+        tk.Label(self.panel_right, text="SECCIÓN DE VENTAS", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=20)
+        tk.Frame(self.panel_right, bg="gray", height=2).pack(fill="x", padx=0, pady=20)
+
+        panel_buscar = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_buscar.pack(pady=10)
+        tk.Label(panel_buscar, text="Buscar producto:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=0,
+                                                                                                       padx=5)
+        entry_buscar = tk.Entry(panel_buscar, width=50, bg="#E6F3FF", font=("Arial", 12))
+        entry_buscar.grid(row=0, column=1, padx=5)
+
+        lista_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        lista_frame.pack(pady=5)
+        encabezado = tk.Frame(lista_frame, bg="#E6F3FF")
+        encabezado.pack(fill="x")
+        tk.Label(encabezado, text="CÓDIGO", font=("Arial", 11, "bold"), width=20, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="NOMBRE", font=("Arial", 11, "bold"), width=30, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="CATEGORÍA", font=("Arial", 11, "bold"), width=20, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="PRECIO", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(side="left")
+
+        frame_lista_scroll = tk.Frame(lista_frame, bg="#FFFFFF")
+        frame_lista_scroll.pack(pady=5)
+        scroll = tk.Scrollbar(frame_lista_scroll)
+        scroll.pack(side="right", fill="y")
+        lista_productos = tk.Listbox(frame_lista_scroll, width=100, height=8, font=("Courier New", 10),yscrollcommand=scroll.set)
+        lista_productos.pack(side="left")
+        scroll.config(command=lista_productos.yview)
+
+        tk.Label(self.panel_right, text="CARRITO", font=("Arial", 14, "bold"), bg="#FFFFFF").pack(pady=(15, 5))
+        carrito_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        carrito_frame.pack()
+        encabezado_carrito = tk.Frame(carrito_frame, bg="#E6F3FF")
+        encabezado_carrito.pack(fill="x")
+
+        tk.Label(encabezado_carrito, text="CANTIDAD", font=("Arial", 11, "bold"), width=10, anchor="w",bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado_carrito, text="NOMBRE", font=("Arial", 11, "bold"), width=30, anchor="w",bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado_carrito, text="PRECIO", font=("Arial", 11, "bold"), width=10, anchor="w",bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado_carrito, text="SUBTOTAL", font=("Arial", 11, "bold"), width=10, anchor="w",bg="#E6F3FF").pack(side="left")
+        carrito = tk.Listbox(carrito_frame, width=100, height=6, font=("Courier New", 10))
+        carrito.pack()
+
+        subtotal_var = tk.DoubleVar(value=0.0)
+        frame_total = tk.Frame(self.panel_right, bg="#FFFFFF")
+        frame_total.pack(pady=5)
+
+        tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left", padx=(10, 5))
+        tk.Label(frame_total, textvariable=subtotal_var, font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left")
+
+        self.carrito_items = []
+
+        def actualizar_lista(event=None):
+            cadena = entry_buscar.get()
+            resultados = Buscar.buscar_por_cadena(cadena) if cadena else []
+            lista_productos.delete(0, tk.END)
+            for r in resultados:
+                lista_productos.insert(tk.END,f"{r['codigo']:<22} {r['nombre']:<33} {r['categoria']:<20} Q.{r['precio']:<8.2f}")
+
+        def agregar_al_carrito(event=None):
+            if not lista_productos.curselection():
+                return
+            seleccion = lista_productos.get(lista_productos.curselection())
+            codigo = seleccion[:22].strip()
+            producto = ObtenerCodigo.obtener_por_codigo(codigo)
+            if producto:
+                for item in self.carrito_items:
+                    if item["codigo"] == producto["codigo"]:
+                        item["cantidad"] += 1
+                        break
+                else:
+                    self.carrito_items.append({
+                        "codigo": producto["codigo"],
+                        "nombre": producto["nombre"],
+                        "precio": float(producto["precio_venta"]),
+                        "cantidad": 1
+                    })
+
+                carrito.delete(0, tk.END)
+                total = 0
+                for item in self.carrito_items:
+                    subtotal = item["cantidad"] * item["precio"]
+                    total += subtotal
+                    carrito.insert(tk.END,
+                                   f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
+                subtotal_var.set(total)
+
+        def finalizar_venta():
+            if not self.carrito_items:
+                messagebox.showerror("Error", "El carrito está vacío.")
+                return
+            detalle = [f"{i['cantidad']} x {i['nombre']} @Q.{i['precio']}" for i in self.carrito_items]
+            total = subtotal_var.get()
+            RegistrarVenta.registrar_venta(total, detalle)
+            messagebox.showinfo("Éxito", f"Venta registrada correctamente. Total: Q.{total:.2f}")
+            carrito.delete(0, tk.END)
+            subtotal_var.set(0.0)
+            self.carrito_items.clear()
+
+        entry_buscar.bind("<KeyRelease>", actualizar_lista)
+        lista_productos.bind("<Double-Button-1>", agregar_al_carrito)
+
+        tk.Button(self.panel_right, text="Finalizar Venta", bg=self.COLOR_BOTON, fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=finalizar_venta).pack(pady=10)
+
+        actualizar_lista()
+
+    def mostrar_inventario(self):
+        self.activar_boton(self.button_inventario)
+        self.limpiar_panel()
+
+        tk.Label(self.panel_right, text="CONSULTA DE INVENTARIO", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=20)
+
+        tk.Frame(self.panel_right, bg="gray", height=2).pack(fill="x", padx=0, pady=20)
+
+        panel_buscar = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_buscar.pack(pady=10)
+
+        tk.Label(panel_buscar, text="Buscar producto:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=0,padx=5)
+        entry_buscar = tk.Entry(panel_buscar, width=50, bg="#E6F3FF", font=("Arial", 12))
+        entry_buscar.grid(row=0, column=1, padx=5)
+
+        lista_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        lista_frame.pack(pady=5, fill="both", expand=True, padx=20)
+
+        encabezado = tk.Frame(lista_frame, bg="#E6F3FF")
+        encabezado.pack(fill="x")
+
+        tk.Label(encabezado, text="CÓDIGO", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="NOMBRE", font=("Arial", 11, "bold"), width=30, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="CATEGORÍA", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="PRECIO", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="STOCK", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(side="left")
+
+        frame_lista_scroll = tk.Frame(lista_frame, bg="#FFFFFF")
+        frame_lista_scroll.pack(pady=5, fill="both", expand=True)
+
+        scroll = tk.Scrollbar(frame_lista_scroll)
+        scroll.pack(side="right", fill="y")
+
+        lista_productos = tk.Listbox(frame_lista_scroll, width=100, height=15, font=("Courier New", 10),yscrollcommand=scroll.set)
+        lista_productos.pack(side="left", fill="both", expand=True)
+        scroll.config(command=lista_productos.yview)
+
+        def actualizar_lista(event=None):
+            cadena = entry_buscar.get()
+            lista_productos.delete(0, tk.END)
+
+            with ProductosDB._conn() as conn:
+                if cadena:
+                    patron = '%' + cadena + '%'
+                    cur = conn.execute(
+                        "SELECT codigo, nombre, categoria, precio_venta, cantidad FROM productos WHERE nombre LIKE ? OR codigo LIKE ? OR categoria LIKE ? ORDER BY nombre",
+                        (patron, patron, patron)
+                    )
+                else:
+                    cur = conn.execute(
+                        "SELECT codigo, nombre, categoria, precio_venta, cantidad FROM productos ORDER BY nombre")
+
+                for r in cur.fetchall():
+                    lista_productos.insert(tk.END,
+                                           f"{r['codigo']:<17} {r['nombre']:<33} {r['categoria']:<17} Q.{r['precio_venta']:<9.2f} {r['cantidad']:<10.2f}")
+
+        entry_buscar.bind("<KeyRelease>", actualizar_lista)
+        actualizar_lista()
 
     def cerrar_sesion(self):
         respuesta = messagebox.askyesno("Confirmación", "¿Está seguro que desea salir?")
