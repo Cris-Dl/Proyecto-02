@@ -1,8 +1,6 @@
 import sqlite3
 from datetime import datetime
 
-DB_NAME = "productos.db"
-
 class Productos:
     def __init__(self, codigo, nombre, precio_compra, precio_venta, categoria, cantidad):
         self.__codigo = codigo
@@ -40,7 +38,7 @@ class Productos:
 
     @property
     def precio_venta(self):
-        return self.__precio_compra
+        return self.__precio_venta
 
     @precio_venta.setter
     def precio_venta(self, new_precio):
@@ -120,6 +118,7 @@ class Proveedores:
         else:
             print("El campo no puede estar vacio")
 
+
 class ProductosDB:
     DB_NAME = "productos.db"
 
@@ -127,7 +126,8 @@ class ProductosDB:
     def _conn():
         conn = sqlite3.connect(ProductosDB.DB_NAME)
         conn.row_factory = sqlite3.Row
-        #Tabla de productos
+
+        # 1. Tabla de productos
         conn.execute("""
                 CREATE TABLE IF NOT EXISTS productos (
                     id_num INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -139,17 +139,7 @@ class ProductosDB:
                     cantidad REAL
                 );
             """)
-        conn.commit()
-        return conn
-
-class VentasDB:
-    DB_NAME = "ventas.db"
-
-    @staticmethod
-    def _conn():
-        conn = sqlite3.connect(VentasDB.DB_NAME)
-        conn.row_factory = sqlite3.Row
-        # Tabla de Ventas
+        # 2. Tabla de Ventas
         conn.execute("""
                 CREATE TABLE IF NOT EXISTS ventas (
                     id_venta INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -158,34 +148,14 @@ class VentasDB:
                     detalle_productos TEXT 
                 );
             """)
-        conn.commit()
-        return conn
-
-class CategoriasDB:
-    DB_NAME = "categorias.db"
-
-    @staticmethod
-    def _conn():
-        conn = sqlite3.connect(CategoriasDB.DB_NAME)
-        conn.row_factory = sqlite3.Row
-        # Tabla de Categorias
+        # 3. Tabla de Categorias
         conn.execute("""
                 CREATE TABLE IF NOT EXISTS categorias (
                     id_categoria INTEGER PRIMARY KEY AUTOINCREMENT,
                     nombre TEXT UNIQUE NOT NULL
                 );
             """)
-        conn.commit()
-        return conn
-
-class ProveedoresDB:
-    DB_NAME = "proveedores.db"
-
-    @staticmethod
-    def _conn():
-        conn = sqlite3.connect(ProductosDB.DB_NAME)
-        conn.row_factory = sqlite3.Row
-        #Tabla proveedores
+        # 4. Tabla proveedores
         conn.execute("""
                 CREATE TABLE IF NOT EXISTS proveedores (
                     id_proveedor INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -196,8 +166,18 @@ class ProveedoresDB:
                     informacion TEXT UNIQUE NOT NULL
                 );
             """)
+
+        conn.execute("""
+                    CREATE TABLE IF NOT EXISTS reportes_novedades (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        fecha TIMESTAMP NOT NULL,
+                        reporte TEXT NOT NULL
+                    );
+                """)
+
         conn.commit()
         return conn
+
 
 class GuardarProducto(ProductosDB):
     @staticmethod
@@ -207,6 +187,8 @@ class GuardarProducto(ProductosDB):
                 "INSERT INTO productos (nombre, codigo, precio_compra, precio_venta, categoria, cantidad) VALUES (?, ?, ?, ?, ?, ?)",
                 (producto.nombre, producto.codigo, producto.precio_compra,producto.precio_venta, producto.categoria, producto.cantidad)
             )
+            conn.commit()
+
 class ObtenerCodigo(ProductosDB):
     @staticmethod
     def obtener_por_codigo(codigo: str):
@@ -220,8 +202,8 @@ class Buscar(ProductosDB):
         patron = '%' + cadena + '%'
         with ProductosDB._conn() as conn:
             cur = conn.execute(
-                "SELECT nombre, codigo, precio_venta FROM productos WHERE nombre LIKE ? OR codigo LIKE ? LIMIT 10",
-                (patron, patron)
+                "SELECT nombre, codigo, precio_venta AS precio, categoria FROM productos WHERE nombre LIKE ? OR codigo LIKE ? OR categoria LIKE ? LIMIT 10",
+                (patron, patron, patron)
             )
             return cur.fetchall()
 
@@ -282,21 +264,40 @@ class AgregarCategori(ProductosDB):
             conn.execute("INSERT INTO categorias (nombre) VALUES (?)", (nombre,))
             conn.commit()
 
-class GuardarProveedor(ProveedoresDB):
+class GuardarProveedor(ProductosDB):
     @staticmethod
     def guardar(proveedor: Proveedores):
-        with ProveedoresDB._conn() as conn:
+        with ProductosDB._conn() as conn:
             conn.execute(
                 "INSERT INTO proveedores (nombre, codigo, telefono, ubicacion, informacion) VALUES (?, ?, ?, ?, ?)",
                 (proveedor.nombre, proveedor.codigo, proveedor.telefono, proveedor.ubicacion, proveedor.informacion)
             )
             conn.commit()
 
-class ObtenerProveedores(ProveedoresDB):
+class ObtenerProveedores(ProductosDB):
     @staticmethod
     def obtener_todos():
-        with ProveedoresDB._conn() as conn:
+        with ProductosDB._conn() as conn:
             cur = conn.execute(
                 "SELECT nombre, codigo, telefono, ubicacion, informacion FROM proveedores ORDER BY nombre"
             )
+            return cur.fetchall()
+
+class GuardarReporte(ProductosDB):
+    @staticmethod
+    def guardar_reporte(texto: str):
+        fecha_actual = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        with ProductosDB._conn() as conn:
+            conn.execute(
+                "INSERT INTO reportes_novedades (fecha, reporte) VALUES (?, ?)",
+                (fecha_actual, texto)
+            )
+            conn.commit()
+        print("Reporte guardado exitosamente.")
+
+class VerReportes(ProductosDB):
+    @staticmethod
+    def ver_reportes():
+        with ProductosDB._conn() as conn:
+            cur = conn.execute("SELECT id, fecha, reporte FROM reportes_novedades ORDER BY fecha DESC")
             return cur.fetchall()
