@@ -358,6 +358,7 @@ class App(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.cerrar_sesion)
         self.state('zoomed')
         configurar_estilo_combobox()
+        self.carrito_items = []
 
         self.panel_left = tk.Frame(self, bg="#1E90FF", width=200, height=500)
         self.panel_left.pack(side="left", fill="y")
@@ -458,7 +459,15 @@ class App(tk.Tk):
         tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left", padx=(10, 5))
         tk.Label(frame_total, textvariable=subtotal_var, font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left")
 
-        self.carrito_items = []
+        def actualizar_carrito_display():
+            carrito.delete(0, tk.END)
+            total = 0
+            for item in self.carrito_items:
+                subtotal = item["cantidad"] * item["precio"]
+                total += subtotal
+                carrito.insert(tk.END,
+                               f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
+            subtotal_var.set(total)
 
         def actualizar_lista(event=None):
             cadena = entry_buscar.get()
@@ -502,14 +511,7 @@ class App(tk.Tk):
                     "precio": float(producto["precio_venta"]),
                     "cantidad": cantidad_a_sumar
                 })
-            carrito.delete(0, tk.END)
-            total = 0
-            for item in self.carrito_items:
-                subtotal = item["cantidad"] * item["precio"]
-                total += subtotal
-                carrito.insert(tk.END,
-                               f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
-            subtotal_var.set(total)
+            actualizar_carrito_display()
 
         def finalizar_venta():
             if not self.carrito_items:
@@ -523,6 +525,8 @@ class App(tk.Tk):
                 ActualizarStock.actualizar_stock(item['codigo'], item['cantidad'])
 
             messagebox.showinfo("Éxito", f"Venta registrada y stock actualizado. Total: Q.{total:.2f}")
+            self.carrito_items.clear()
+            actualizar_carrito_display()
             carrito.delete(0, tk.END)
             subtotal_var.set(0.0)
             self.carrito_items.clear()
@@ -544,6 +548,7 @@ class App(tk.Tk):
         tk.Button(self.panel_right, text="Finalizar Venta", bg=self.COLOR_BOTON, fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=finalizar_venta).pack(pady=10)
 
         actualizar_lista()
+        actualizar_carrito_display()
 
     def mostrar_buscar_venta(self):
         self.activar_boton(self.button_buscar_venta)
