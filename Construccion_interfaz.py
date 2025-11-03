@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
+from tkinter import simpledialog
 import sqlite3
 from datetime import datetime
 from reportlab.lib.pagesizes import letter
@@ -458,6 +459,7 @@ class App(tk.Tk):
         self.state('zoomed')
         configurar_estilo_combobox()
         self.carrito_items = []
+        self.auth_eliminar_carrito = False
 
         self.panel_left = tk.Frame(self, bg="#1E90FF", width=200, height=500)
         self.panel_left.pack(side="left", fill="y")
@@ -510,6 +512,7 @@ class App(tk.Tk):
     def mostrar_ventas(self):
         self.activar_boton(self.button_ventas)
         self.limpiar_panel()
+        self.auth_eliminar_carrito = False
 
         tk.Label(self.panel_right, text="SECCIÓN DE VENTAS", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=20)
         tk.Frame(self.panel_right, bg="gray", height=2).pack(fill="x", padx=0, pady=20)
@@ -568,6 +571,46 @@ class App(tk.Tk):
                                f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
             subtotal_var.set(total)
 
+        def solicitar_autorizacion():
+            if self.auth_eliminar_carrito:
+                return True
+
+            codigo = simpledialog.askstring("Autorización requerida","Ingrese el código de autorización para eliminar productos del carrito:",show='*')
+
+            if codigo == "A1B2C3":
+                self.auth_eliminar_carrito = True
+                messagebox.showinfo("Autorizado", "Autorización concedida. Ahora puede eliminar productos del carrito.")
+                return True
+            elif codigo is not None:
+                messagebox.showerror("Error", "Código incorrecto. Autorización denegada.")
+
+            return False
+
+        def eliminar_uno_del_carrito(event=None):
+            if not carrito.curselection():
+                return
+
+            if not solicitar_autorizacion():
+                return
+
+            indice = int(carrito.curselection()[0])
+
+            if indice >= len(self.carrito_items):
+                return
+
+            item_seleccionado = self.carrito_items[indice]
+
+            if "cantidad" not in item_seleccionado:
+                messagebox.showerror("Error", "Estructura de datos inválida")
+                return
+
+            item_seleccionado["cantidad"] -= 1
+
+            if item_seleccionado["cantidad"] <= 0:
+                self.carrito_items.pop(indice)
+
+            actualizar_carrito_display()
+
         def actualizar_lista(event=None):
             cadena = entry_buscar.get()
             resultados = Buscar.buscar_por_cadena(cadena) if cadena else []
@@ -612,6 +655,25 @@ class App(tk.Tk):
                 })
             actualizar_carrito_display()
 
+        def vaciar_carrito():
+            if not self.carrito_items:
+                messagebox.showwarning("Advertencia", "El carrito ya está vacío.")
+                return
+
+            if not solicitar_autorizacion():
+                return
+
+            confirmar = messagebox.askyesno(
+                "Confirmar acción",
+                f"¿Está seguro de que desea vaciar el carrito?\n\n"
+                f"Se eliminarán {len(self.carrito_items)} producto(s)."
+            )
+
+            if confirmar:
+                self.carrito_items.clear()
+                actualizar_carrito_display()
+                messagebox.showinfo("Éxito", "El carrito ha sido vaciado.")
+
         def finalizar_venta():
             if not self.carrito_items:
                 messagebox.showerror("Error", "El carrito está vacío.")
@@ -629,6 +691,8 @@ class App(tk.Tk):
             carrito.delete(0, tk.END)
             subtotal_var.set(0.0)
             self.carrito_items.clear()
+
+            self.auth_eliminar_carrito = False
 
         def generar_factura():
             if not self.carrito_items:
@@ -723,14 +787,16 @@ class App(tk.Tk):
         entry_buscar.bind("<Return>", agregar_enter)
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         lista_productos.bind("<Double-Button-1>", agregar_al_carrito)
+        carrito.bind("<Double-Button-1>", eliminar_uno_del_carrito)
 
         frame_botones_accion = tk.Frame(self.panel_right, bg="#FFFFFF")
         frame_botones_accion.pack(pady=10)
 
-        tk.Button(frame_botones_accion, text="Finalizar Venta", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=finalizar_venta, width=20).grid(row=0, column=0, padx=10)
+        tk.Button(frame_botones_accion, text="Finalizar Venta", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=finalizar_venta, width=20).grid(row=0, column=1, padx=10)
 
-        tk.Button(frame_botones_accion, text="Generar Factura", bg="#28a745", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=generar_factura, width=20).grid(row=0, column=1, padx=10)
+        tk.Button(frame_botones_accion, text="Generar Factura", bg="#28a745", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=generar_factura, width=20).grid(row=0, column=0, padx=10)
 
+        tk.Button(frame_botones_accion, text="Vaciar Carrito", bg="#ffc107", fg="black", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=vaciar_carrito, width=20).grid(row=0, column=2, padx=10)
         actualizar_lista()
         actualizar_carrito_display()
 
@@ -1831,6 +1897,8 @@ class AppCajera(tk.Tk):
         self.COLOR_SELECCION = "#0056b3"
         self.protocol("WM_DELETE_WINDOW", self.cerrar_sesion)
         self.state('zoomed')
+        self.carrito_items = []
+        self.auth_eliminar_carrito = False
 
         self.panel_left = tk.Frame(self, bg="#1E90FF", width=200, height=500)
         self.panel_left.pack(side="left", fill="y")
@@ -1875,6 +1943,7 @@ class AppCajera(tk.Tk):
     def mostrar_ventas(self):
         self.activar_boton(self.button_ventas)
         self.limpiar_panel()
+        self.auth_eliminar_carrito = False
 
         tk.Label(self.panel_right, text="SECCIÓN DE VENTAS", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=20)
         tk.Frame(self.panel_right, bg="gray", height=2).pack(fill="x", padx=0, pady=20)
@@ -1923,7 +1992,55 @@ class AppCajera(tk.Tk):
         tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left", padx=(10, 5))
         tk.Label(frame_total, textvariable=subtotal_var, font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left")
 
-        self.carrito_items = []
+        def actualizar_carrito_display():
+            carrito.delete(0, tk.END)
+            total = 0
+            for item in self.carrito_items:
+                subtotal = item["cantidad"] * item["precio"]
+                total += subtotal
+                carrito.insert(tk.END,
+                               f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
+            subtotal_var.set(total)
+
+        def solicitar_autorizacion():
+            if self.auth_eliminar_carrito:
+                return True
+
+            codigo = simpledialog.askstring("Autorización requerida","Ingrese el código de autorización para eliminar productos del carrito:",show='*')
+
+            if codigo == "A1B2C3":
+                self.auth_eliminar_carrito = True
+                messagebox.showinfo("Autorizado", "Autorización concedida. Ahora puede eliminar productos del carrito.")
+                return True
+            elif codigo is not None:
+                messagebox.showerror("Error", "Código incorrecto. Autorización denegada.")
+
+            return False
+
+        def eliminar_uno_del_carrito(event=None):
+            if not carrito.curselection():
+                return
+
+            if not solicitar_autorizacion():
+                return
+
+            indice = int(carrito.curselection()[0])
+
+            if indice >= len(self.carrito_items):
+                return
+
+            item_seleccionado = self.carrito_items[indice]
+
+            if "cantidad" not in item_seleccionado:
+                messagebox.showerror("Error", "Estructura de datos inválida")
+                return
+
+            item_seleccionado["cantidad"] -= 1
+
+            if item_seleccionado["cantidad"] <= 0:
+                self.carrito_items.pop(indice)
+
+            actualizar_carrito_display()
 
         def actualizar_lista(event=None):
             cadena = entry_buscar.get()
@@ -1968,6 +2085,26 @@ class AppCajera(tk.Tk):
                 carrito.insert(tk.END,f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
             subtotal_var.set(total)
 
+        def vaciar_carrito():
+            if not self.carrito_items:
+                messagebox.showwarning("Advertencia", "El carrito ya está vacío.")
+                return
+
+            if not solicitar_autorizacion():
+                return
+
+            confirmar = messagebox.askyesno(
+                "Confirmar acción",
+                f"¿Está seguro de que desea vaciar el carrito?\n\n"
+                f"Se eliminarán {len(self.carrito_items)} producto(s)."
+            )
+
+            if confirmar:
+                self.carrito_items.clear()
+                actualizar_carrito_display()
+                messagebox.showinfo("Éxito", "El carrito ha sido vaciado.")
+
+
         def finalizar_venta():
             if not self.carrito_items:
                 messagebox.showerror("Error", "El carrito está vacío.")
@@ -1983,6 +2120,7 @@ class AppCajera(tk.Tk):
             carrito.delete(0, tk.END)
             subtotal_var.set(0.0)
             self.carrito_items.clear()
+            self.auth_eliminar_carrito = False
 
         def generar_factura():
             if not self.carrito_items:
@@ -2067,13 +2205,16 @@ class AppCajera(tk.Tk):
 
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         lista_productos.bind("<Double-Button-1>", agregar_al_carrito)
+        carrito.bind("<Double-Button-1>", eliminar_uno_del_carrito)
 
         frame_botones_accion = tk.Frame(self.panel_right, bg="#FFFFFF")
         frame_botones_accion.pack(pady=10)
 
-        tk.Button(frame_botones_accion, text="Finalizar Venta", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=finalizar_venta, width=20).grid(row=0, column=0, padx=10)
+        tk.Button(frame_botones_accion, text="Finalizar Venta", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", command=finalizar_venta, width=20).grid(row=0, column=1, padx=10)
 
-        tk.Button(frame_botones_accion, text="Generar Factura", bg="#28a745", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=generar_factura, width=20).grid(row=0, column=1, padx=10)
+        tk.Button(frame_botones_accion, text="Generar Factura", bg="#28a745", fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=generar_factura, width=20).grid(row=0, column=0, padx=10)
+
+        tk.Button(frame_botones_accion, text="Vaciar Carrito", bg="#ffc107", fg="black", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=vaciar_carrito, width=20).grid(row=0, column=2, padx=10)
         actualizar_lista()
 
     def mostrar_inventario(self):
