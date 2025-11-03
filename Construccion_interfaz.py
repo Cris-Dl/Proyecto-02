@@ -288,8 +288,6 @@ class ObtenerProveedores(ProductosDB):
             )
             return cur.fetchall()
 
-
-
 class Login:
     def __init__(self, root):
         self.root=root
@@ -573,16 +571,27 @@ class App(tk.Tk):
         entry_fecha = tk.Entry(panel_filtros, width=20, bg="#E6F3FF", font=("Arial", 12))
         entry_fecha.grid(row=0, column=1, padx=5)
 
-        tk.Button(panel_filtros, text="Buscar", bg=self.COLOR_BOTON, fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2",command=lambda: actualizar_lista(entry_fecha.get())).grid(row=0, column=2, padx=10)
+        def buscar_por_teclado(event):
+            actualizar_lista(entry_fecha.get(), self.combo_mes_filtro.get())
+        entry_fecha.bind("<KeyRelease>", buscar_por_teclado)
 
+        tk.Label(panel_filtros, text="Filtrar por Mes:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=2,padx=(20, 5))
+        meses = ["Todos", "01-Enero", "02-Febrero", "03-Marzo", "04-Abril","05-Mayo", "06-Junio", "07-Julio", "08-Agosto", "09-Septiembre","10-Octubre", "11-Noviembre", "12-Diciembre"]
+        self.combo_mes_filtro = ttk.Combobox(panel_filtros, values=meses, width=15, style='Custom.TCombobox',state="readonly", font=("Arial", 12))
+        self.combo_mes_filtro.current(0)
+        self.combo_mes_filtro.grid(row=0, column=3, padx=5)
+
+        def seleccionar_mes(event):
+            actualizar_lista(entry_fecha.get(), self.combo_mes_filtro.get())
+        self.combo_mes_filtro.bind("<<ComboboxSelected>>", seleccionar_mes)
+
+        tk.Button(panel_filtros, text="Buscar", bg=self.COLOR_BOTON, fg="white", font=("Arial", 10, "bold"),relief="flat", cursor="hand2",command=lambda: actualizar_lista(entry_fecha.get(), self.combo_mes_filtro.get())).grid(row=0,column=4,
+                                                                                                         padx=10)
         resumen_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
         resumen_frame.pack(pady=5)
-
-
         COLOR_ENCABEZADO = "#E6F3FF"
         encabezado = tk.Frame(resumen_frame, bg=COLOR_ENCABEZADO)
         encabezado.pack(side="top", fill="x")
-
 
         tk.Label(encabezado, text="ID", font=("Arial", 11, "bold"), width=9, anchor="w", bg=COLOR_ENCABEZADO).pack(side="left")
         tk.Label(encabezado, text="FECHA Y HORA", font=("Arial", 11, "bold"), width=35, anchor="w", bg=COLOR_ENCABEZADO).pack(side="left")
@@ -627,16 +636,28 @@ class App(tk.Tk):
         tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left", padx=(10, 5))
         tk.Label(frame_total, textvariable=total_var, font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left")
 
-        def actualizar_lista(fecha_buscar=""):
+        def actualizar_lista(fecha_buscar="", mes_filtro="Todos"):
             lista_resumen.delete(0, tk.END)
             with ProductosDB._conn() as conn:
+                query = "SELECT id_venta, fecha_venta, total_venta FROM ventas"
+                conditions = []
+                params = []
                 if fecha_buscar:
-                    cur = conn.execute("SELECT id_venta, fecha_venta, total_venta FROM ventas WHERE fecha_venta LIKE ?",('%' + fecha_buscar + '%',))
-                else:
-                    cur = conn.execute("SELECT id_venta, fecha_venta, total_venta FROM ventas ORDER BY id_venta DESC LIMIT 50")
+                    conditions.append("fecha_venta LIKE ?")
+                    params.append('%' + fecha_buscar + '%')
+
+                if mes_filtro and mes_filtro != "Todos":
+                    mes_num = mes_filtro.split('-')[0]
+                    conditions.append("SUBSTR(fecha_venta, 4, 2) = ?")
+                    params.append(mes_num)
+                if conditions:
+                    query += " WHERE " + " AND ".join(conditions)
+                query += " ORDER BY fecha_venta DESC LIMIT 50"
+
+                cur = conn.execute(query, tuple(params))
+
                 for v in cur.fetchall():
                     lista_resumen.insert(tk.END,f"{v['id_venta']:<10} {v['fecha_venta']:<40} Q.{v['total_venta']:<10.2f}")
-
 
         def mostrar_detalle(event):
             if not lista_resumen.curselection():
@@ -656,19 +677,17 @@ class App(tk.Tk):
                         try:
                             cantidad, info_producto = item.split(" x ", 1)
                             cantidad = cantidad.strip()
-
                             nombre, precio_unidad_str = info_producto.split(" @Q.", 1)
                             nombre = nombre.strip()
                             precio_unidad = float(precio_unidad_str.strip())
-
-                            lista_detalle.insert(tk.END,f"{cantidad:<35} {nombre:<35} Q.{precio_unidad:<10.2f}")
+                            lista_detalle.insert(tk.END, f"{cantidad:<35} {nombre:<35} Q.{precio_unidad:<10.2f}")
                         except ValueError:
                             lista_detalle.insert(tk.END, f"ERROR DE FORMATO: {item}")
 
                     total_var.set(total_venta)
 
         lista_resumen.bind("<<ListboxSelect>>", mostrar_detalle)
-        actualizar_lista()
+        actualizar_lista("", self.combo_mes_filtro.get())
 
     def mostrar_inventario(self):
         self.activar_boton(self.button_inventario)
@@ -738,15 +757,12 @@ class App(tk.Tk):
                     patron = '%' + cadena + '%'
                     cur = conn.execute(
                         "SELECT codigo, nombre, categoria, precio_venta, cantidad FROM productos WHERE nombre LIKE ? OR codigo LIKE ? OR categoria LIKE ? ORDER BY nombre",
-                        (patron, patron, patron)
-                    )
+                        (patron, patron, patron))
                 else:
                     cur = conn.execute(
                         "SELECT codigo, nombre, categoria, precio_venta, cantidad FROM productos ORDER BY nombre")
-
                 for r in cur.fetchall():
-                    lista_productos.insert(tk.END,
-                                           f"{r['codigo']:<17} {r['nombre']:<33} {r['categoria']:<17} Q.{r['precio_venta']:<9.2f} {r['cantidad']:<10.2f}")
+                    lista_productos.insert(tk.END,f"{r['codigo']:<17} {r['nombre']:<33} {r['categoria']:<17} Q.{r['precio_venta']:<9.2f} {r['cantidad']:<10.2f}")
 
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         actualizar_lista()
