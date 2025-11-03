@@ -765,8 +765,6 @@ class App(tk.Tk):
             actualizar_lista(entry_fecha.get(), self.combo_mes_filtro.get())
         self.combo_mes_filtro.bind("<<ComboboxSelected>>", seleccionar_mes)
 
-        tk.Button(panel_filtros, text="Buscar", bg=self.COLOR_BOTON, fg="white", font=("Arial", 10, "bold"),relief="flat", cursor="hand2",command=lambda: actualizar_lista(entry_fecha.get(), self.combo_mes_filtro.get())).grid(row=0,column=4,
-                                                                                                         padx=10)
         resumen_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
         resumen_frame.pack(pady=5)
         COLOR_ENCABEZADO = "#E6F3FF"
@@ -895,8 +893,7 @@ class App(tk.Tk):
         panel_buscar = tk.Frame(self.panel_right, bg="#FFFFFF")
         panel_buscar.pack(pady=10)
 
-        tk.Label(panel_buscar, text="Buscar producto:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=0,
-                                                                                                       padx=5)
+        tk.Label(panel_buscar, text="Buscar producto:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=0,padx=5)
         entry_buscar = tk.Entry(panel_buscar, width=50, bg="#E6F3FF", font=("Arial", 12))
         entry_buscar.grid(row=0, column=1, padx=5)
 
@@ -906,16 +903,11 @@ class App(tk.Tk):
         encabezado = tk.Frame(lista_frame, bg="#E6F3FF")
         encabezado.pack(fill="x")
 
-        tk.Label(encabezado, text="CÓDIGO", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(
-            side="left")
-        tk.Label(encabezado, text="NOMBRE", font=("Arial", 11, "bold"), width=30, anchor="w", bg="#E6F3FF").pack(
-            side="left")
-        tk.Label(encabezado, text="CATEGORÍA", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(
-            side="left")
-        tk.Label(encabezado, text="PRECIO", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(
-            side="left")
-        tk.Label(encabezado, text="STOCK", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(
-            side="left")
+        tk.Label(encabezado, text="CÓDIGO", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="NOMBRE", font=("Arial", 11, "bold"), width=30, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="CATEGORÍA", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="PRECIO", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="STOCK", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(side="left")
 
         frame_lista_scroll = tk.Frame(lista_frame, bg="#FFFFFF")
         frame_lista_scroll.pack(pady=5, fill="both", expand=True)
@@ -923,8 +915,7 @@ class App(tk.Tk):
         scroll = tk.Scrollbar(frame_lista_scroll)
         scroll.pack(side="right", fill="y")
 
-        lista_productos = tk.Listbox(frame_lista_scroll, width=100, height=15, font=("Courier New", 10),
-                                     yscrollcommand=scroll.set)
+        lista_productos = tk.Listbox(frame_lista_scroll, width=100, height=15, font=("Courier New", 10),yscrollcommand=scroll.set)
         lista_productos.pack(side="left", fill="both", expand=True)
         scroll.config(command=lista_productos.yview)
 
