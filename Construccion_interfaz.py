@@ -2,7 +2,10 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 import sqlite3
 from datetime import datetime
-
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import mm
+from reportlab.pdfgen import canvas
+import os
 
 def configurar_estilo_combobox():
     style = ttk.Style()
@@ -180,6 +183,14 @@ class ProductosDB:
                 );
             """)
 
+        conn.execute("""
+                    CREATE TABLE IF NOT EXISTS reportes_novedades (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        fecha TIMESTAMP NOT NULL,
+                        reporte TEXT NOT NULL
+                    );
+                """)
+
         conn.commit()
         return conn
 
@@ -223,7 +234,6 @@ class RegistrarVenta(ProductosDB):
                 (fecha_actual, total, detalle_str)
             )
             conn.commit()
-        print(f"Venta registrada: Total ${total:.2f}")
 
 class ActualizarStock(ProductosDB):
     @staticmethod
@@ -287,6 +297,91 @@ class ObtenerProveedores(ProductosDB):
                 "SELECT nombre, codigo, telefono, ubicacion, informacion FROM proveedores ORDER BY nombre"
             )
             return cur.fetchall()
+
+class GuardarReporte(ProductosDB):
+    @staticmethod
+    def guardar_reporte(texto: str):
+        fecha_actual = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        with ProductosDB._conn() as conn:
+            conn.execute(
+                "INSERT INTO reportes_novedades (fecha, reporte) VALUES (?, ?)",
+                (fecha_actual, texto)
+            )
+            conn.commit()
+        print("Reporte guardado exitosamente.")
+
+class VerReportes(ProductosDB):
+    @staticmethod
+    def ver_reportes():
+        with ProductosDB._conn() as conn:
+            cur = conn.execute("SELECT id, fecha, reporte FROM reportes_novedades ORDER BY fecha DESC")
+            return cur.fetchall()
+
+class GeneradorFacturas:
+    @staticmethod
+    def generar_factura_pdf(carrito, total, nit, nombre, direccion):
+        fecha = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+        nombre_archivo = f"Factura_{fecha}.pdf"
+
+        ruta_facturas = os.path.join(os.getcwd(), "Facturas")
+        if not os.path.exists(ruta_facturas):
+            os.makedirs(ruta_facturas)
+
+        ruta = os.path.join(ruta_facturas, nombre_archivo)
+
+        c = canvas.Canvas(ruta, pagesize=letter)
+
+        margen_x = 20 * mm
+        margen_y = 265 * mm
+
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(margen_x, margen_y, "MINIMARKET")
+
+        c.setFont("Helvetica", 10)
+        c.drawString(margen_x, margen_y - 10, "Factura electrónica")
+        c.drawString(margen_x, margen_y - 25, f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(margen_x, margen_y - 50, "Datos del cliente:")
+
+        c.setFont("Helvetica", 10)
+        c.drawString(margen_x, margen_y - 65, f"NIT: {nit}")
+        c.drawString(margen_x, margen_y - 80, f"Nombre: {nombre}")
+        c.drawString(margen_x, margen_y - 95, f"Dirección: {direccion}")
+
+        y = margen_y - 130
+        c.setFont("Helvetica-Bold", 11)
+        c.drawString(margen_x, y, "CANT")
+        c.drawString(margen_x + 50, y, "PRODUCTO")
+        c.drawString(margen_x + 250, y, "PRECIO")
+        c.drawString(margen_x + 320, y, "SUBTOTAL")
+
+        c.line(margen_x, y - 5, margen_x + 380, y - 5)
+
+        c.setFont("Helvetica", 10)
+        y -= 25
+
+        for item in carrito:
+            producto = item["nombre"]
+            precio = float(item["precio"])
+            cantidad = int(item["cantidad"])
+            subtotal = cantidad * precio
+
+            c.drawString(margen_x, y, str(cantidad))
+            c.drawString(margen_x + 50, y, producto[:35])
+            c.drawString(margen_x + 250, y, f"Q.{precio:.2f}")
+            c.drawString(margen_x + 320, y, f"Q.{subtotal:.2f}")
+
+            y -= 20
+            if y < 50:
+                c.showPage()
+                y = 750
+
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(margen_x, y - 10, f"TOTAL A PAGAR: Q.{total:.2f}")
+
+        c.save()
+        return ruta
 
 class Login:
     def __init__(self, root):
@@ -535,6 +630,86 @@ class App(tk.Tk):
             subtotal_var.set(0.0)
             self.carrito_items.clear()
 
+        def generar_factura():
+            if not self.carrito_items:
+                messagebox.showerror("Error", "El carrito está vacío. Agregue productos antes de generar la factura.")
+                return
+
+            ventana_factura = tk.Toplevel(self)
+            ventana_factura.title("Generar Factura")
+            ventana_factura.geometry("500x400")
+            ventana_factura.configure(bg="#FFFFFF")
+            ventana_factura.resizable(False, False)
+            ventana_factura.transient(self)
+            ventana_factura.grab_set()
+
+            ventana_factura.update_idletasks()
+            x = (ventana_factura.winfo_screenwidth() // 2) - (500 // 2)
+            y = (ventana_factura.winfo_screenheight() // 2) - (400 // 2)
+            ventana_factura.geometry(f"500x400+{x}+{y}")
+
+            tk.Label(ventana_factura, text="DATOS DEL CLIENTE", font=("Arial", 18, "bold"),bg="#FFFFFF", fg="#007BFF").pack(pady=20)
+
+            tk.Frame(ventana_factura, bg="gray", height=2).pack(fill="x", padx=20, pady=10)
+
+            campos_frame = tk.Frame(ventana_factura, bg="#FFFFFF")
+            campos_frame.pack(pady=20, padx=40)
+
+            tk.Label(campos_frame, text="NIT:", font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=0, column=0, sticky="e", padx=10, pady=15)
+            entry_nit = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat",font=("Arial", 11))
+            entry_nit.grid(row=0, column=1, pady=15)
+            entry_nit.focus()
+
+            tk.Label(campos_frame, text="NOMBRE:", font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=1, column=0, sticky="e", padx=10, pady=15)
+            entry_nombre = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat",font=("Arial", 11))
+            entry_nombre.grid(row=1, column=1, pady=15)
+
+            tk.Label(campos_frame, text="UBICACIÓN:", font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=2, column=0, sticky="e", padx=10, pady=15)
+            entry_ubicacion = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat",font=("Arial", 11))
+            entry_ubicacion.grid(row=2, column=1, pady=15)
+
+            botones_frame = tk.Frame(ventana_factura, bg="#FFFFFF")
+            botones_frame.pack(pady=20)
+
+            def procesar_factura():
+                nit = entry_nit.get().strip()
+                nombre = entry_nombre.get().strip()
+                ubicacion = entry_ubicacion.get().strip()
+
+                if not nit or not nombre or not ubicacion:
+                    messagebox.showerror("Error", "Todos los campos son obligatorios.",parent=ventana_factura)
+                    return
+
+                try:
+                    total = subtotal_var.get()
+                    archivo_pdf = GeneradorFacturas.generar_factura_pdf(self.carrito_items,total,nit,nombre,ubicacion)
+
+                    ventana_factura.destroy()
+
+                    respuesta = messagebox.askyesno(
+                        "Factura Generada",
+                        f"Factura generada exitosamente:\n\n{archivo_pdf}\n\n"
+                        f"¿Desea abrir la factura ahora?"
+                    )
+
+                    if respuesta:
+                        import subprocess
+                        import platform
+
+                        if platform.system() == 'Windows':
+                            os.startfile(archivo_pdf)
+                        elif platform.system() == 'Darwin':
+                            subprocess.call(['open', archivo_pdf])
+                        else:
+                            subprocess.call(['xdg-open', archivo_pdf])
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Error al generar la factura:\n{str(e)}",parent=ventana_factura)
+
+            tk.Button(botones_frame, text="GENERAR FACTURA", bg="#007BFF", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=procesar_factura, width=20).grid(row=0, column=0, padx=10)
+
+            tk.Button(botones_frame, text="CANCELAR", bg="#6c757d", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=ventana_factura.destroy, width=15).grid(row=0, column=1, padx=10)
+
         def agregar_enter(event):
             actualizar_lista()
             if lista_productos.size() > 0:
@@ -549,7 +724,12 @@ class App(tk.Tk):
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         lista_productos.bind("<Double-Button-1>", agregar_al_carrito)
 
-        tk.Button(self.panel_right, text="Finalizar Venta", bg=self.COLOR_BOTON, fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=finalizar_venta).pack(pady=10)
+        frame_botones_accion = tk.Frame(self.panel_right, bg="#FFFFFF")
+        frame_botones_accion.pack(pady=10)
+
+        tk.Button(frame_botones_accion, text="Finalizar Venta", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=finalizar_venta, width=20).grid(row=0, column=0, padx=10)
+
+        tk.Button(frame_botones_accion, text="Generar Factura", bg="#28a745", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=generar_factura, width=20).grid(row=0, column=1, padx=10)
 
         actualizar_lista()
         actualizar_carrito_display()
@@ -1767,27 +1947,35 @@ class AppCajera(tk.Tk):
             seleccion = lista_productos.get(lista_productos.curselection())
             codigo = seleccion[:22].strip()
             producto = ObtenerCodigo.obtener_por_codigo(codigo)
-            if producto:
-                for item in self.carrito_items:
-                    if item["codigo"] == producto["codigo"]:
-                        item["cantidad"] += 1
-                        break
-                else:
-                    self.carrito_items.append({
-                        "codigo": producto["codigo"],
-                        "nombre": producto["nombre"],
-                        "precio": float(producto["precio_venta"]),
-                        "cantidad": 1
-                    })
+            if not producto:
+                return
 
-                carrito.delete(0, tk.END)
-                total = 0
-                for item in self.carrito_items:
-                    subtotal = item["cantidad"] * item["precio"]
-                    total += subtotal
-                    carrito.insert(tk.END,
-                                   f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
-                subtotal_var.set(total)
+            stock_disponible = producto["cantidad"]
+            cantidad_en_carrito = sum(item["cantidad"] for item in self.carrito_items if item["codigo"] == codigo)
+
+            if cantidad_en_carrito >= stock_disponible:
+                messagebox.showerror("Stock Agotado", f"No hay más stock de {producto['nombre']}.")
+                return
+
+            for item in self.carrito_items:
+                if item["codigo"] == producto["codigo"]:
+                    item["cantidad"] += 1
+                    break
+            else:
+                self.carrito_items.append({
+                    "codigo": producto["codigo"],
+                    "nombre": producto["nombre"],
+                    "precio": float(producto["precio_venta"]),
+                    "cantidad": 1
+                })
+
+            carrito.delete(0, tk.END)
+            total = 0
+            for item in self.carrito_items:
+                subtotal = item["cantidad"] * item["precio"]
+                total += subtotal
+                carrito.insert(tk.END,f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
+            subtotal_var.set(total)
 
         def finalizar_venta():
             if not self.carrito_items:
@@ -1796,16 +1984,105 @@ class AppCajera(tk.Tk):
             detalle = [f"{i['cantidad']} x {i['nombre']} @Q.{i['precio']}" for i in self.carrito_items]
             total = subtotal_var.get()
             RegistrarVenta.registrar_venta(total, detalle)
+
+            for item in self.carrito_items:
+                ActualizarStock.actualizar_stock(item['codigo'], item['cantidad'])
+
             messagebox.showinfo("Éxito", f"Venta registrada correctamente. Total: Q.{total:.2f}")
             carrito.delete(0, tk.END)
             subtotal_var.set(0.0)
             self.carrito_items.clear()
 
+        def generar_factura():
+            if not self.carrito_items:
+                messagebox.showerror("Error", "El carrito está vacío. Agregue productos antes de generar la factura.")
+                return
+
+            ventana_factura = tk.Toplevel(self)
+            ventana_factura.title("Generar Factura")
+            ventana_factura.geometry("500x400")
+            ventana_factura.configure(bg="#FFFFFF")
+            ventana_factura.resizable(False, False)
+            ventana_factura.transient(self)
+            ventana_factura.grab_set()
+
+            ventana_factura.update_idletasks()
+            x = (ventana_factura.winfo_screenwidth() // 2) - (500 // 2)
+            y = (ventana_factura.winfo_screenheight() // 2) - (400 // 2)
+            ventana_factura.geometry(f"500x400+{x}+{y}")
+
+            tk.Label(ventana_factura, text="DATOS DEL CLIENTE", font=("Arial", 18, "bold"),bg="#FFFFFF", fg="#007BFF").pack(pady=20)
+
+            tk.Frame(ventana_factura, bg="gray", height=2).pack(fill="x", padx=20, pady=10)
+
+            campos_frame = tk.Frame(ventana_factura, bg="#FFFFFF")
+            campos_frame.pack(pady=20, padx=40)
+
+            tk.Label(campos_frame, text="NIT:", font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=0, column=0, sticky="e", padx=10, pady=15)
+            entry_nit = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat",font=("Arial", 11))
+            entry_nit.grid(row=0, column=1, pady=15)
+            entry_nit.focus()
+
+            tk.Label(campos_frame, text="NOMBRE:", font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=1, column=0, sticky="e", padx=10, pady=15)
+            entry_nombre = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat",font=("Arial", 11))
+            entry_nombre.grid(row=1, column=1, pady=15)
+
+            tk.Label(campos_frame, text="UBICACIÓN:", font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=2, column=0, sticky="e", padx=10, pady=15)
+            entry_ubicacion = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat",font=("Arial", 11))
+            entry_ubicacion.grid(row=2, column=1, pady=15)
+
+            botones_frame = tk.Frame(ventana_factura, bg="#FFFFFF")
+            botones_frame.pack(pady=20)
+
+            def procesar_factura():
+                nit = entry_nit.get().strip()
+                nombre = entry_nombre.get().strip()
+                ubicacion = entry_ubicacion.get().strip()
+
+                if not nit or not nombre or not ubicacion:
+                    messagebox.showerror("Error", "Todos los campos son obligatorios.",
+                                         parent=ventana_factura)
+                    return
+
+                try:
+                    total = subtotal_var.get()
+                    archivo_pdf = GeneradorFacturas.generar_factura_pdf(self.carrito_items,total,nit,nombre,ubicacion)
+
+                    ventana_factura.destroy()
+
+                    respuesta = messagebox.askyesno(
+                        "Factura Generada",
+                        f"Factura generada exitosamente:\n\n{archivo_pdf}\n\n"
+                        f"¿Desea abrir la factura ahora?"
+                    )
+
+                    if respuesta:
+                        import subprocess
+                        import platform
+
+                        if platform.system() == 'Windows':
+                            os.startfile(archivo_pdf)
+                        elif platform.system() == 'Darwin':
+                            subprocess.call(['open', archivo_pdf])
+                        else:
+                            subprocess.call(['xdg-open', archivo_pdf])
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Error al generar la factura:\n{str(e)}",parent=ventana_factura)
+
+            tk.Button(botones_frame, text="GENERAR FACTURA", bg="#007BFF", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=procesar_factura, width=20).grid(row=0, column=0, padx=10)
+
+            tk.Button(botones_frame, text="CANCELAR", bg="#6c757d", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=ventana_factura.destroy, width=15).grid(row=0, column=1, padx=10)
+
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         lista_productos.bind("<Double-Button-1>", agregar_al_carrito)
 
-        tk.Button(self.panel_right, text="Finalizar Venta", bg=self.COLOR_BOTON, fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=finalizar_venta).pack(pady=10)
+        frame_botones_accion = tk.Frame(self.panel_right, bg="#FFFFFF")
+        frame_botones_accion.pack(pady=10)
 
+        tk.Button(frame_botones_accion, text="Finalizar Venta", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=finalizar_venta, width=20).grid(row=0, column=0, padx=10)
+
+        tk.Button(frame_botones_accion, text="Generar Factura", bg="#28a745", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=generar_factura, width=20).grid(row=0, column=1, padx=10)
         actualizar_lista()
 
     def mostrar_inventario(self):
