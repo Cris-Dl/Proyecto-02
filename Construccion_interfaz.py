@@ -342,6 +342,12 @@ class Login:
             self.root.destroy()
             app_cajera = AppCajera()
             app_cajera.mainloop()
+
+        elif user == "SUPERADMIN" and password == "A1B2C3":
+            self.root.destroy()
+            app_delete_db = AppDeleteDB()
+            app_delete_db.mainloop()
+
         else:
             messagebox.showerror("ERROR","Error en sus credenciales, inténtelo de nuevo.")
 
@@ -686,6 +692,64 @@ class App(tk.Tk):
 
         linea = tk.Frame(self.panel_right, bg="gray", height=2)
         linea.pack(fill="x", padx=0, pady=20)
+
+        panel_buscar = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_buscar.pack(pady=10)
+
+        tk.Label(panel_buscar, text="Buscar producto:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=0,
+                                                                                                       padx=5)
+        entry_buscar = tk.Entry(panel_buscar, width=50, bg="#E6F3FF", font=("Arial", 12))
+        entry_buscar.grid(row=0, column=1, padx=5)
+
+        lista_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        lista_frame.pack(pady=5, fill="both", expand=True, padx=20)
+
+        encabezado = tk.Frame(lista_frame, bg="#E6F3FF")
+        encabezado.pack(fill="x")
+
+        tk.Label(encabezado, text="CÓDIGO", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(
+            side="left")
+        tk.Label(encabezado, text="NOMBRE", font=("Arial", 11, "bold"), width=30, anchor="w", bg="#E6F3FF").pack(
+            side="left")
+        tk.Label(encabezado, text="CATEGORÍA", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(
+            side="left")
+        tk.Label(encabezado, text="PRECIO", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(
+            side="left")
+        tk.Label(encabezado, text="STOCK", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(
+            side="left")
+
+        frame_lista_scroll = tk.Frame(lista_frame, bg="#FFFFFF")
+        frame_lista_scroll.pack(pady=5, fill="both", expand=True)
+
+        scroll = tk.Scrollbar(frame_lista_scroll)
+        scroll.pack(side="right", fill="y")
+
+        lista_productos = tk.Listbox(frame_lista_scroll, width=100, height=15, font=("Courier New", 10),
+                                     yscrollcommand=scroll.set)
+        lista_productos.pack(side="left", fill="both", expand=True)
+        scroll.config(command=lista_productos.yview)
+
+        def actualizar_lista(event=None):
+            cadena = entry_buscar.get()
+            lista_productos.delete(0, tk.END)
+
+            with ProductosDB._conn() as conn:
+                if cadena:
+                    patron = '%' + cadena + '%'
+                    cur = conn.execute(
+                        "SELECT codigo, nombre, categoria, precio_venta, cantidad FROM productos WHERE nombre LIKE ? OR codigo LIKE ? OR categoria LIKE ? ORDER BY nombre",
+                        (patron, patron, patron)
+                    )
+                else:
+                    cur = conn.execute(
+                        "SELECT codigo, nombre, categoria, precio_venta, cantidad FROM productos ORDER BY nombre")
+
+                for r in cur.fetchall():
+                    lista_productos.insert(tk.END,
+                                           f"{r['codigo']:<17} {r['nombre']:<33} {r['categoria']:<17} Q.{r['precio_venta']:<9.2f} {r['cantidad']:<10.2f}")
+
+        entry_buscar.bind("<KeyRelease>", actualizar_lista)
+        actualizar_lista()
 
     def mostrar_proveedores(self):
         self.activar_boton(self.button_proveedores)
@@ -1733,7 +1797,6 @@ class AppCajera(tk.Tk):
         self.limpiar_panel()
 
         tk.Label(self.panel_right, text="CONSULTA DE INVENTARIO", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=20)
-
         tk.Frame(self.panel_right, bg="gray", height=2).pack(fill="x", padx=0, pady=20)
 
         panel_buscar = tk.Frame(self.panel_right, bg="#FFFFFF")
@@ -1794,6 +1857,145 @@ class AppCajera(tk.Tk):
             root = tk.Tk()
             Login(root)
             root.mainloop()
+
+class AppDeleteDB(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("MiniMarket - SUPERADMIN")
+        self.geometry("1200x600")
+        self.resizable(True, True)
+        self.configure(bg="#FFFFFF")
+        self.COLOR_FONDO = "#1E90FF"
+        self.COLOR_BOTON = "#007BFF"
+        self.COLOR_PELIGRO = "#DC3545"
+        self.COLOR_SELECCION = "#0056b3"
+        self.protocol("WM_DELETE_WINDOW", self.cerrar_sesion)
+        self.state('zoomed')
+
+        self.panel_left = tk.Frame(self, bg="#1E90FF", width=200, height=500)
+        self.panel_left.pack(side="left", fill="y")
+
+        self.panel_right = tk.Frame(self, bg="#FFFFFF")
+        self.panel_right.pack(side="right", fill="both", expand=True)
+
+        self.imagen = tk.PhotoImage(file="2.png")
+        self.label_logo = tk.Label(self.panel_left, image=self.imagen, bg="#1E90FF")
+        self.label_logo.place(x=10, y=20)
+        self.label_logo.bind("<Button-1>", self.mostrar_menu_principal)
+
+        self.button_close = tk.Button(self.panel_left, text="CERRAR SESIÓN", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.cerrar_sesion)
+        self.button_close.place(x=0, y=550, height=35)
+
+        self.mostrar_menu_principal()
+
+    def limpiar_panel(self):
+        for widget in self.panel_right.winfo_children():
+            widget.destroy()
+
+    def mostrar_menu_principal(self, event=None):
+        self.limpiar_panel()
+
+        tk.Label(self.panel_right, text="MENÚ PRINCIPAL - SUPERADMIN",font=("Arial", 22, "bold"), bg="#FFFFFF", fg="#DC3545").pack(pady=50)
+
+        tk.Label(self.panel_right, text="PERFIL PARA GESTIÓN DE DATOS",font=("Arial", 16), bg="#FFFFFF").pack(pady=20)
+
+        frame_botones = tk.Frame(self.panel_right, bg="#FFFFFF")
+        frame_botones.pack(pady=50)
+
+        tk.Label(frame_botones,text="ZONA PELIGROSA",font=("Arial", 16, "bold"),bg="#FFFFFF",fg="#DC3545").pack(pady=20)
+
+        tk.Label(frame_botones,text="Las siguientes acciones son irreversibles y eliminarán todos los datos del sistema.",font=("Arial", 11),bg="#FFFFFF",fg="#666666",wraplength=600,justify="center").pack(pady=10)
+
+        tk.Button(frame_botones,text="RESETEAR TODAS LAS BASES DE DATOS",bg=self.COLOR_PELIGRO,fg="white",font=("Arial", 14, "bold"),relief="flat",cursor="hand2",command=self.resetear_base_datos,width=40,height=2).pack(pady=20)
+
+
+    def resetear_base_datos(self):
+        primera_confirmacion = messagebox.askokcancel(
+            "Advertencia crítica - Confirmación 1 de 2",
+            "Está a punto de eliminar todos los datos del sistema.\n\n"
+            "Esta acción incluye:\n"
+            "• Todos los productos\n"
+            "• Todas las ventas\n"
+            "• Todas las categorías\n"
+            "• Todos los proveedores\n\n"
+            "Esta acción no se puede deshacer.\n\n"
+            "¿Está seguro de que desea continuar?"
+        )
+
+        if not primera_confirmacion:
+            messagebox.showinfo("Cancelado", "Operación cancelada. No se eliminó ningún dato.")
+            return
+
+        from tkinter import simpledialog
+
+        codigo_verificacion = simpledialog.askstring(
+            "Confirmación final - 2 de 2",
+            "Para confirmar que comprende las consecuencias,\n"
+            "ingrese el siguiente código de verificación:\n\n"
+            "ELIMINAR TODO\n\n"
+            "(Debe escribirlo exactamente como está)"
+        )
+
+        if codigo_verificacion != "ELIMINAR TODO":
+            if codigo_verificacion is not None:
+                messagebox.showerror(
+                    "Código incorrecto",
+                    "Código de verificación incorrecto.\nOperación cancelada."
+                )
+            else:
+                messagebox.showinfo("Cancelado", "Operación cancelada. No se eliminó ningún dato.")
+            return
+
+        try:
+            with ProductosDB._conn() as conn:
+                cur_productos = conn.execute("SELECT COUNT(*) as total FROM productos")
+                total_productos = cur_productos.fetchone()['total']
+
+                cur_ventas = conn.execute("SELECT COUNT(*) as total FROM ventas")
+                total_ventas = cur_ventas.fetchone()['total']
+
+                cur_categorias = conn.execute("SELECT COUNT(*) as total FROM categorias")
+                total_categorias = cur_categorias.fetchone()['total']
+
+                cur_proveedores = conn.execute("SELECT COUNT(*) as total FROM proveedores")
+                total_proveedores = cur_proveedores.fetchone()['total']
+
+                conn.execute("DELETE FROM productos")
+                conn.execute("DELETE FROM ventas")
+                conn.execute("DELETE FROM categorias")
+                conn.execute("DELETE FROM proveedores")
+
+                conn.execute("DELETE FROM sqlite_sequence WHERE name='productos'")
+                conn.execute("DELETE FROM sqlite_sequence WHERE name='ventas'")
+                conn.execute("DELETE FROM sqlite_sequence WHERE name='categorias'")
+                conn.execute("DELETE FROM sqlite_sequence WHERE name='proveedores'")
+
+                conn.commit()
+
+            messagebox.showinfo(
+                "Base de datos reseteada",
+                f"Todas las bases de datos han sido eliminadas.\n\n"
+                f"Resumen:\n"
+                f"• Productos eliminados: {total_productos}\n"
+                f"• Ventas eliminadas: {total_ventas}\n"
+                f"• Categorías eliminadas: {total_categorias}\n"
+                f"• Proveedores eliminados: {total_proveedores}\n"
+            )
+
+        except Exception as e:
+            messagebox.showerror(
+                "Error",
+                f"Ocurrió un error al resetear la base de datos:\n\n{str(e)}"
+            )
+
+    def cerrar_sesion(self):
+        respuesta = messagebox.askyesno("Confirmación", "¿Está seguro que desea salir?")
+        if respuesta:
+            self.destroy()
+            root = tk.Tk()
+            Login(root)
+            root.mainloop()
+
 
 if __name__ == "__main__":
     root=tk.Tk()
