@@ -550,6 +550,7 @@ class App(tk.Tk):
         actualizar_lista()
         actualizar_carrito_display()
 
+
     def mostrar_buscar_venta(self):
         self.activar_boton(self.button_buscar_venta)
         self.limpiar_panel()
