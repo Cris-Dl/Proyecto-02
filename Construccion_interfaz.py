@@ -1593,6 +1593,10 @@ class App(tk.Tk):
                 messagebox.showerror("Error", "Todos los campos son obligatorios.")
                 return
 
+            if not telefono.isdigit():
+                messagebox.showerror("Error de Formato", "El campo Teléfono solo debe contener números (dígitos).")
+                return
+
             try:
                 proveedor = Proveedores(nombre=nombre, codigo=codigo, telefono=telefono,ubicacion=ubicacion, informacion=informacion)
                 GuardarProveedor.guardar(proveedor)
@@ -1605,6 +1609,11 @@ class App(tk.Tk):
                 entry_informacion.delete(0, tk.END)
                 entry_nombre.focus()
 
+            except sqlite3.IntegrityError as e:
+                error_msg = str(e).lower()
+
+                if 'proveedores.codigo' in error_msg or 'unique constraint' in error_msg and 'codigo' in error_msg:
+                    messagebox.showerror("Error de Código","¡Error! El código del proveedor ya está registrado en la base de datos. Debe ser único.")
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo guardar el proveedor:\n{str(e)}")
 
@@ -1738,6 +1747,10 @@ class App(tk.Tk):
 
             if not all([nuevo_nombre, nuevo_telefono, nueva_ubicacion, nueva_informacion]):
                 messagebox.showerror("Error", "Todos los campos son obligatorios.")
+                return
+
+            if not nuevo_telefono.isdigit():
+                messagebox.showerror("Error de Formato", "El campo Teléfono solo debe contener números (dígitos).")
                 return
 
             try:
