@@ -1511,11 +1511,6 @@ class App(tk.Tk):
                 messagebox.showerror("Error de Valor", "Los precios y la cantidad deben ser números **mayores a 0**.")
                 return
             try:
-                producto = Productos(codigo=codigo, nombre=nombre, precio_compra=precio_compra_float, precio_venta=precio_venta_float, categoria=categoria, cantidad=cantidad_float)
-
-                GuardarProducto.guardar(producto)
-
-                messagebox.showinfo("Éxito", f"Producto '{nombre}' agregado correctamente.")
                 entry_nombre.delete(0, tk.END)
                 entry_codigo.delete(0, tk.END)
                 entry_precio.delete(0, tk.END)
