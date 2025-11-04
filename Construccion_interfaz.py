@@ -1075,11 +1075,31 @@ class App(tk.Tk):
         entry_cantidad.place(x=200, y=240, height=25)
 
         def guardar_producto():
-            if not all([entry_codigo.get(), entry_nombre.get(), entry_precio.get(), combo_categoria.get(),entry_cantidad.get()]):
-                messagebox.showerror("Error", "Todos los campos son obligatorios.")
+            nombre = entry_nombre.get().strip()
+            codigo = entry_codigo.get().strip()
+            categoria = combo_categoria.get().strip()
+
+            if not nombre or not codigo or not categoria or not entry_precio.get() or not entry_precio_venta.get() or not entry_cantidad.get():
+                messagebox.showerror("Error de Validación", "Todos los campos son obligatorios.")
+                return
+            try:
+                precio_compra = float(entry_precio.get().replace('Q.', '').strip())
+                precio_venta = float(entry_precio_venta.get().replace('Q.', '').strip())
+                cantidad = float(entry_cantidad.get().strip())
+            except ValueError:
+                messagebox.showerror("Error de entrada", "Los campos de precio y cantidad deben ser números válidos.")
+                return
+            if precio_compra <= 0:
+                messagebox.showerror("Error de Validación","El precio de compra debe ser un número positivo (mayor a cero).")
+                return
+            if precio_venta <= 0:
+                messagebox.showerror("Error de Validación","El precio de venta debe ser un número positivo (mayor a cero).")
+                return
+            if cantidad <= 0:
+                messagebox.showerror("Error de Validación","La cantidad inicial de stock debe ser un número positivo (mayor a cero).")
                 return
 
-            producto = Productos(codigo=entry_codigo.get(), nombre=entry_nombre.get(),precio_venta=float(entry_precio_venta.get()), precio_compra=float(entry_precio.get()),categoria=combo_categoria.get(), cantidad=float(entry_cantidad.get()))
+            producto = Productos(codigo=codigo, nombre=nombre, precio_venta=precio_venta, precio_compra=precio_compra,categoria=categoria, cantidad=cantidad)
             GuardarProducto.guardar(producto)
             messagebox.showinfo("Éxito", f"Producto '{producto.nombre}' agregado correctamente.")
 
@@ -1215,18 +1235,22 @@ class App(tk.Tk):
             if not all([nuevo_nombre, nuevo_precio_compra, nuevo_precio_venta, nueva_categoria, nueva_cantidad]):
                 messagebox.showerror("Error", "Todos los campos son obligatorios.")
                 return
-
             try:
-                ModificarProducto.modificar_producto(codigo=self.codigo_actual_edicion,nombre=nuevo_nombre,precio_compra=float(nuevo_precio_compra),precio_venta=float(nuevo_precio_venta),categoria=nueva_categoria,cantidad=float(nueva_cantidad))
+                precio_compra_float = float(nuevo_precio_compra)
+                precio_venta_float = float(nuevo_precio_venta)
+                cantidad_float = float(nueva_cantidad)
+                if precio_compra_float <= 0 or precio_venta_float <= 0 or cantidad_float <= 0:
+                    messagebox.showerror("Error","El precio de compra, precio de venta y la cantidad deben ser números mayores a 0.")
+                    return
+
+                ModificarProducto.modificar_producto(codigo=self.codigo_actual_edicion, nombre=nuevo_nombre,precio_compra=precio_compra_float, precio_venta=precio_venta_float,categoria=nueva_categoria, cantidad=cantidad_float)
 
                 messagebox.showinfo("Éxito", f"Producto '{nuevo_nombre}' actualizado correctamente.")
-
                 entry_nombre.delete(0, tk.END)
                 entry_precio_compra.delete(0, tk.END)
                 entry_precio_venta.delete(0, tk.END)
                 combo_categoria.set('')
                 entry_cantidad.delete(0, tk.END)
-
                 self.codigo_actual_edicion = None
                 entry_buscar.delete(0, tk.END)
                 actualizar_lista()
