@@ -493,6 +493,7 @@ class App(tk.Tk):
         self.botones=[self.button_ventas, self.button_buscar_venta, self.button_inventario, self.button_proveedores, self.button_reportes]
 
         self.mostrar_menu_principal()
+
     def activar_boton(self, boton):
         for b in self.botones:
             b.config(bg=self.COLOR_BOTON)
@@ -504,7 +505,7 @@ class App(tk.Tk):
 
     def mostrar_menu_principal(self, event=None):
         self.limpiar_panel()
-        tk.Label(self.panel_right, text="MENÚ PRINCIPAL", font=("Arial", 22, "bold"), bg="#FFFFFF").pack(pady=50)
+        tk.Label(self.panel_right, text="MENÚ PRINCIPAL - ADMINISTRADOR", font=("Arial", 22, "bold"), bg="#FFFFFF").pack(pady=50)
         tk.Label(self.panel_right, text="¡Bienvenido al MiniMarket!", font=("Arial", 16), bg="#FFFFFF").pack(pady=20)
         for b in self.botones:
             b.config(bg=self.COLOR_BOTON)
@@ -1175,8 +1176,279 @@ class App(tk.Tk):
         self.limpiar_panel()
         tk.Label(self.panel_right, text="REPORTES DEL SISTEMA", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=20)
 
+        frame_botones = tk.Frame(self.panel_right, bg="#FFFFFF")
+        frame_botones.pack(pady=10)
+
+        button_ver_reporte_cajera = tk.Button(frame_botones, text="VER REPORTES", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_ver_reportes)
+        button_ver_reporte_cajera.grid(row=0, column=0, padx=10)
+
+        button_ganancias = tk.Button(frame_botones, text="ECONOMIA", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_economia)
+        button_ganancias.grid(row=0, column=1, padx=10)
+
         linea = tk.Frame(self.panel_right, bg="gray", height=2)
         linea.pack(fill="x", padx=0, pady=10)
+
+    def mostrar_ver_reportes(self):
+        for widget in self.panel_right.winfo_children():
+            if isinstance(widget, tk.Frame) and widget.winfo_y() > 150:
+                widget.destroy()
+            elif isinstance(widget, tk.Label) and widget.winfo_y() > 150:
+                widget.destroy()
+
+        contenido_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        contenido_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        tk.Label(contenido_frame, text="VER REPORTES DE CAJERAS", font=("Arial", 16, "bold"), bg="#FFFFFF").pack(pady=10)
+
+        panel_filtros = tk.Frame(contenido_frame, bg="#FFFFFF")
+        panel_filtros.pack(pady=10)
+
+        tk.Label(panel_filtros, text="Buscar por fecha (dd-mm-yyyy):", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=0, padx=5)
+        entry_fecha = tk.Entry(panel_filtros, width=20, bg="#E6F3FF", font=("Arial", 12))
+        entry_fecha.grid(row=0, column=1, padx=5)
+
+        tk.Label(panel_filtros, text="Filtrar por Mes:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=2,padx=(20, 5))
+        meses = ["Todos", "01-Enero", "02-Febrero", "03-Marzo", "04-Abril", "05-Mayo", "06-Junio","07-Julio", "08-Agosto", "09-Septiembre", "10-Octubre", "11-Noviembre", "12-Diciembre"]
+        combo_mes_filtro = ttk.Combobox(panel_filtros, values=meses, width=15, style='Custom.TCombobox',state="readonly", font=("Arial", 12))
+        combo_mes_filtro.current(0)
+        combo_mes_filtro.grid(row=0, column=3, padx=5)
+
+        lista_frame = tk.Frame(contenido_frame, bg="#FFFFFF")
+        lista_frame.pack(pady=10, padx=50, fill="both")
+
+        encabezado = tk.Frame(lista_frame, bg="#E6F3FF")
+        encabezado.pack(fill="x")
+
+        tk.Label(encabezado, text="ID", font=("Arial", 11, "bold"), width=8, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="FECHA Y HORA", font=("Arial", 11, "bold"), width=25, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="REPORTE (Vista previa)", font=("Arial", 11, "bold"), width=70, anchor="w",bg="#E6F3FF").pack(side="left")
+
+        frame_lista_scroll = tk.Frame(lista_frame)
+        frame_lista_scroll.pack(fill="both", pady=5)
+
+        scroll = tk.Scrollbar(frame_lista_scroll)
+        scroll.pack(side="right", fill="y")
+
+        lista_reportes = tk.Listbox(frame_lista_scroll, width=120, height=8, font=("Courier New", 10),yscrollcommand=scroll.set)
+        lista_reportes.pack(side="left", fill="both", expand=True)
+        scroll.config(command=lista_reportes.yview)
+
+        detalle_frame = tk.Frame(contenido_frame, bg="#FFFFFF")
+        detalle_frame.pack(pady=10, padx=50, fill="both", expand=True)
+
+        tk.Label(detalle_frame, text="DETALLE DEL REPORTE", font=("Arial", 14, "bold"), bg="#FFFFFF").pack(pady=5)
+
+        text_frame = tk.Frame(detalle_frame, bg="#FFFFFF")
+        text_frame.pack(pady=10, fill="both", expand=True)
+
+        scroll_text = tk.Scrollbar(text_frame)
+        scroll_text.pack(side="right", fill="y")
+
+        text_reporte = tk.Text(text_frame, width=100, height=10, font=("Arial", 12), bg="#E6F3FF",relief="solid", borderwidth=2, yscrollcommand=scroll_text.set, wrap="word",state="disabled", padx=10, pady=10)
+        text_reporte.pack(side="left", fill="both", expand=True)
+        scroll_text.config(command=text_reporte.yview)
+
+        def actualizar_lista(fecha_buscar="", mes_filtro="Todos"):
+            lista_reportes.delete(0, tk.END)
+
+            with ProductosDB._conn() as conn:
+                query = "SELECT id, fecha, reporte FROM reportes_novedades"
+                conditions = []
+                params = []
+
+                if fecha_buscar:
+                    conditions.append("fecha LIKE ?")
+                    params.append('%' + fecha_buscar + '%')
+
+                if mes_filtro and mes_filtro != "Todos":
+                    mes_num = mes_filtro.split('-')[0]
+                    conditions.append("SUBSTR(fecha, 4, 2) = ?")
+                    params.append(mes_num)
+
+                if conditions:
+                    query += " WHERE " + " AND ".join(conditions)
+
+                query += " ORDER BY fecha DESC LIMIT 100"
+
+                cur = conn.execute(query, tuple(params))
+
+                for r in cur.fetchall():
+                    reporte_truncado = r['reporte'][:80] + "..." if len(r['reporte']) > 80 else r['reporte']
+                    lista_reportes.insert(tk.END, f"{r['id']:<9} {r['fecha']:<28} {reporte_truncado}")
+
+        def mostrar_detalle_reporte(event):
+            if not lista_reportes.curselection():
+                return
+
+            indice = lista_reportes.curselection()[0]
+            seleccion = lista_reportes.get(indice)
+            id_reporte = int(seleccion[:9].strip())
+
+            with ProductosDB._conn() as conn:
+                cur = conn.execute("SELECT reporte FROM reportes_novedades WHERE id = ?", (id_reporte,))
+                reporte = cur.fetchone()
+
+                if reporte:
+                    # Actualizar solo el texto completo del reporte
+                    text_reporte.config(state="normal")
+                    text_reporte.delete("1.0", tk.END)
+                    text_reporte.insert("1.0", reporte['reporte'])
+                    text_reporte.config(state="disabled")
+
+        def buscar_por_teclado(event):
+            actualizar_lista(entry_fecha.get(), combo_mes_filtro.get())
+
+        def seleccionar_mes(event):
+            actualizar_lista(entry_fecha.get(), combo_mes_filtro.get())
+
+        entry_fecha.bind("<KeyRelease>", buscar_por_teclado)
+        combo_mes_filtro.bind("<<ComboboxSelected>>", seleccionar_mes)
+        lista_reportes.bind("<<ListboxSelect>>", mostrar_detalle_reporte)
+
+        frame_botones = tk.Frame(contenido_frame, bg="#FFFFFF")
+        frame_botones.pack(pady=10)
+
+        tk.Button(frame_botones, text="VOLVER", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=self.mostrar_reportes, width=20).pack()
+
+        actualizar_lista()
+
+        actualizar_lista()
+
+    def mostrar_economia(self):
+        for widget in self.panel_right.winfo_children():
+            if isinstance(widget, tk.Frame) and widget.winfo_y() > 150:
+                widget.destroy()
+            elif isinstance(widget, tk.Label) and widget.winfo_y() > 150:
+                widget.destroy()
+
+        contenido_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        contenido_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        tk.Label(contenido_frame, text="ANÁLISIS ECONÓMICO", font=("Arial", 16, "bold"), bg="#FFFFFF").pack(pady=10)
+
+        panel_filtro = tk.Frame(contenido_frame, bg="#FFFFFF")
+        panel_filtro.pack(pady=20)
+
+        tk.Label(panel_filtro, text="Seleccionar Mes:", font=("Arial", 14, "bold"), bg="#FFFFFF").grid(row=0, column=0,padx=10)
+
+        meses = ["01-Enero", "02-Febrero", "03-Marzo", "04-Abril", "05-Mayo", "06-Junio","07-Julio", "08-Agosto", "09-Septiembre", "10-Octubre", "11-Noviembre", "12-Diciembre"]
+
+        combo_mes = ttk.Combobox(panel_filtro, values=meses, width=20, style='Custom.TCombobox',state="readonly", font=("Arial", 12))
+        fecha_actual = datetime.now()
+        mes_actual = f"{fecha_actual.month:02d}"
+        for i, mes in enumerate(meses):
+            if mes.startswith(mes_actual):
+                combo_mes.current(i)
+                break
+        combo_mes.grid(row=0, column=1, padx=10)
+
+        tk.Label(panel_filtro, text="Año:", font=("Arial", 14, "bold"), bg="#FFFFFF").grid(row=0, column=2, padx=10)
+
+        anio_actual = fecha_actual.year
+        anios = [str(anio_actual - 1), str(anio_actual), str(anio_actual + 1)]
+        combo_anio = ttk.Combobox(panel_filtro, values=anios, width=10, style='Custom.TCombobox',state="readonly", font=("Arial", 12))
+        combo_anio.set(str(anio_actual))
+        combo_anio.grid(row=0, column=3, padx=10)
+
+        btn_calcular = tk.Button(panel_filtro, text="CALCULAR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=15)
+        btn_calcular.grid(row=0, column=4, padx=20)
+
+        resultados_frame = tk.Frame(contenido_frame, bg="#FFFFFF")
+        resultados_frame.pack(pady=30, padx=100, fill="both", expand=True)
+
+        tk.Label(resultados_frame, text="RESUMEN ECONÓMICO", font=("Arial", 16, "bold"), bg="#FFFFFF").pack(pady=10)
+
+        datos_frame = tk.Frame(resultados_frame, bg="#E6F3FF", relief="solid", borderwidth=2)
+        datos_frame.pack(pady=20, padx=50, fill="x")
+
+        tk.Label(datos_frame, text="INVERSIÓN TOTAL:", font=("Arial", 14, "bold"), bg="#E6F3FF").grid(row=0, column=0,sticky="w",padx=20, pady=15)
+        label_inversion = tk.Label(datos_frame, text="Q. 0.00", font=("Arial", 14), bg="#E6F3FF", fg="#DC3545")
+        label_inversion.grid(row=0, column=1, sticky="e", padx=20, pady=15)
+
+        tk.Label(datos_frame, text="VENTAS TOTALES:", font=("Arial", 14, "bold"), bg="#E6F3FF").grid(row=1, column=0,sticky="w",padx=20, pady=15)
+        label_ventas = tk.Label(datos_frame, text="Q. 0.00", font=("Arial", 14), bg="#E6F3FF", fg="#007BFF")
+        label_ventas.grid(row=1, column=1, sticky="e", padx=20, pady=15)
+
+        tk.Frame(datos_frame, bg="gray", height=2).grid(row=2, column=0, columnspan=2, sticky="ew", padx=20, pady=10)
+
+        tk.Label(datos_frame, text="GANANCIA:", font=("Arial", 16, "bold"), bg="#E6F3FF").grid(row=3, column=0,sticky="w", padx=20,pady=15)
+        label_ganancia = tk.Label(datos_frame, text="Q. 0.00", font=("Arial", 16, "bold"), bg="#E6F3FF", fg="#28a745")
+        label_ganancia.grid(row=3, column=1, sticky="e", padx=20, pady=15)
+
+        tk.Label(datos_frame, text="MARGEN DE GANANCIA:", font=("Arial", 14, "bold"), bg="#E6F3FF").grid(row=4,column=0,sticky="w",padx=20,pady=15)
+        label_margen = tk.Label(datos_frame, text="0.00%", font=("Arial", 14), bg="#E6F3FF", fg="#6c757d")
+        label_margen.grid(row=4, column=1, sticky="e", padx=20, pady=15)
+
+        datos_frame.grid_columnconfigure(1, weight=1)
+
+        def calcular_economia():
+            mes_seleccionado = combo_mes.get().split('-')[0]
+            anio_seleccionado = combo_anio.get()
+
+            try:
+                with ProductosDB._conn() as conn:
+                    cur_ventas = conn.execute("""
+                        SELECT v.detalle_productos, v.total_venta 
+                        FROM ventas v
+                        WHERE SUBSTR(v.fecha_venta, 4, 2) = ? 
+                        AND SUBSTR(v.fecha_venta, 7, 4) = ?
+                    """, (mes_seleccionado, anio_seleccionado))
+
+                    ventas = cur_ventas.fetchall()
+
+                    inversion_total = 0
+                    ventas_total = 0
+
+                    for venta in ventas:
+                        ventas_total += venta['total_venta']
+
+                        detalle_productos = venta['detalle_productos'].split(" | ")
+
+                        for item in detalle_productos:
+                            try:
+                                cantidad_str, resto = item.split(" x ", 1)
+                                cantidad = int(cantidad_str.strip())
+
+                                nombre_producto = resto.split(" @Q.")[0].strip()
+
+                                cur_producto = conn.execute("""
+                                    SELECT precio_compra 
+                                    FROM productos 
+                                    WHERE nombre = ?
+                                """, (nombre_producto,))
+
+                                producto = cur_producto.fetchone()
+
+                                if producto:
+                                    inversion_total += cantidad * producto['precio_compra']
+
+                            except (ValueError, IndexError):
+                                continue
+
+                    ganancia = ventas_total - inversion_total
+                    margen = (ganancia / ventas_total * 100) if ventas_total > 0 else 0
+
+                    label_inversion.config(text=f"Q. {inversion_total:,.2f}")
+                    label_ventas.config(text=f"Q. {ventas_total:,.2f}")
+                    label_ganancia.config(text=f"Q. {ganancia:,.2f}")
+                    label_margen.config(text=f"{margen:.2f}%")
+
+                    if ganancia < 0:
+                        label_ganancia.config(fg="#DC3545")
+                    else:
+                        label_ganancia.config(fg="#28a745")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al calcular economía:\n{str(e)}")
+
+        btn_calcular.config(command=calcular_economia)
+
+        frame_botones = tk.Frame(contenido_frame, bg="#FFFFFF")
+        frame_botones.pack(pady=10)
+
+        tk.Button(frame_botones, text="VOLVER", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=self.mostrar_reportes, width=20).pack()
+
+        calcular_economia()
 
     def mostrar_agregar_producto(self):
         for widget in self.panel_right.winfo_children():
@@ -2095,15 +2367,18 @@ class AppCajera(tk.Tk):
         self.label_logo.bind("<Button-1>", self.mostrar_menu_principal)
 
         self.button_ventas = tk.Button(self.panel_left, text="VENTAS", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_ventas)
-        self.button_ventas.place(x=0, y=150, height=35)
+        self.button_ventas.place(x=0, y=220, height=35)
 
         self.button_inventario = tk.Button(self.panel_left, text="INVENTARIO", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_inventario)
-        self.button_inventario.place(x=0, y=220, height=35)
+        self.button_inventario.place(x=0, y=290, height=35)
+
+        self.button_reportes = tk.Button(self.panel_left, text="REPORTES", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_crear_reporte)
+        self.button_reportes.place(x=0, y=360, height=35)
 
         self.button_close = tk.Button(self.panel_left, text="CERRAR SESIÓN", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.cerrar_sesion)
-        self.button_close.place(x=0, y=550, height=35)
+        self.button_close.place(x=0, y=600, height=35)
 
-        self.botones = [self.button_ventas, self.button_inventario]
+        self.botones = [self.button_ventas, self.button_inventario, self.button_reportes]
 
         self.mostrar_menu_principal()
 
@@ -2500,6 +2775,57 @@ class AppCajera(tk.Tk):
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         lista_productos.bind("<<ListboxSelect>>", mostrar_detalle)
         actualizar_lista()
+
+    def mostrar_crear_reporte(self):
+        self.activar_boton(self.button_reportes)
+        self.limpiar_panel()
+
+        tk.Label(self.panel_right, text="CREAR REPORTE DE NOVEDADES",font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=15)
+
+        tk.Frame(self.panel_right, bg="gray", height=2).pack(fill="x", padx=0, pady=5)
+
+        panel_form = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_form.pack(fill="both", expand=True, padx=50, pady=10)
+
+        tk.Label(panel_form, text="Escriba el reporte o novedad:",font=("Arial", 14, "bold"), bg="#FFFFFF").pack(pady=5)
+
+        texto_frame = tk.Frame(panel_form, bg="#FFFFFF")
+        texto_frame.pack(pady=5)
+
+        scroll_texto = tk.Scrollbar(texto_frame)
+        scroll_texto.pack(side="right", fill="y")
+
+        text_reporte = tk.Text(texto_frame, width=80, height=15,font=("Arial", 12), bg="#E6F3FF",relief="solid", borderwidth=2,yscrollcommand=scroll_texto.set, wrap="word")
+        text_reporte.pack(side="left")
+        scroll_texto.config(command=text_reporte.yview)
+
+        def guardar_reporte():
+            texto = text_reporte.get("1.0", tk.END).strip()
+
+            if not texto:
+                messagebox.showerror("Error", "El reporte no puede estar vacío.")
+                return
+
+            if len(texto) < 10:
+                messagebox.showerror("Error", "El reporte debe tener al menos 10 caracteres.")
+                return
+
+            try:
+                GuardarReporte.guardar_reporte(texto)
+                messagebox.showinfo("Éxito", "Reporte guardado correctamente.")
+                text_reporte.delete("1.0", tk.END)
+                text_reporte.focus()
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo guardar el reporte:\n{str(e)}")
+
+        frame_botones = tk.Frame(panel_form, bg="#FFFFFF")
+        frame_botones.pack(pady=5)
+
+        tk.Button(frame_botones, text="GUARDAR REPORTE",bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat",cursor="hand2", command=guardar_reporte, width=20).grid(row=0, column=0, padx=10)
+
+        tk.Button(frame_botones, text="LIMPIAR",bg="#6c757d", fg="white",font=("Arial", 12, "bold"), relief="flat",cursor="hand2", command=lambda: text_reporte.delete("1.0", tk.END),width=15).grid(row=0, column=1, padx=10)
+
+        text_reporte.focus()
 
     def cerrar_sesion(self):
         respuesta = messagebox.askyesno("Confirmación", "¿Está seguro que desea salir?")
