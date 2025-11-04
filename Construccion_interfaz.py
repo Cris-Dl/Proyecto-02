@@ -1030,8 +1030,7 @@ class App(tk.Tk):
                 else:
                     cur = conn.execute("SELECT codigo, nombre, categoria, precio_compra, precio_venta, cantidad FROM productos ORDER BY nombre")
                 for r in cur.fetchall():
-                    lista_productos.insert(tk.END,f"{r['codigo']:<13} {r['nombre']:<29} {r['categoria']:<16} Q.{r['precio_compra']:<9.2f} Q.{r['precio_venta']:<9.2f} {r['cantidad']:<8.2f}")
-
+                    lista_productos.insert(tk.END,f"{r['codigo']:<13} {r['nombre']:<29} {r['categoria']:<16} Q.{float(r['precio_compra']):<9.2f} Q.{float(r['precio_venta']):<9.2f} {float(r['cantidad']):<8.2f}")
         def mostrar_detalle(event):
             if not lista_productos.curselection():
                 return
