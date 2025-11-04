@@ -941,16 +941,16 @@ class App(tk.Tk):
         panel_buttons = tk.Frame(self.panel_right, bg="#FFFFFF")
         panel_buttons.pack(pady=0)
 
-        button_agregar = tk.Button(panel_buttons, text="AGREGAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_agregar_producto)
+        button_agregar = tk.Button(panel_buttons, text="AGREGAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_agregar_producto)
         button_agregar.grid(row=0, column=0, padx=10)
 
-        button_editar=tk.Button(panel_buttons, text="EDITAR PRODUCTO", bg=self.COLOR_BOTON, fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", width=25, command=self.mostrar_editar_producto)
+        button_editar = tk.Button(panel_buttons, text="EDITAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_editar_producto)
         button_editar.grid(row=0, column=1, padx=10)
 
-        btn_eliminar = tk.Button(panel_buttons, text="ELIMINAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_eliminar_producto)
+        btn_eliminar = tk.Button(panel_buttons, text="ELIMINAR PRODUCTO", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_eliminar_producto)
         btn_eliminar.grid(row=0, column=2, padx=10, pady=5)
 
-        btn_categorias = tk.Button(panel_buttons, text="CATEGORÍAS", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_categorias)
+        btn_categorias = tk.Button(panel_buttons, text="CATEGORÍAS", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_categorias)
         btn_categorias.grid(row=0, column=3, padx=10, pady=5)
 
         linea = tk.Frame(self.panel_right, bg="gray", height=2)
@@ -964,26 +964,59 @@ class App(tk.Tk):
         entry_buscar.grid(row=0, column=1, padx=5)
 
         lista_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
-        lista_frame.pack(pady=5, fill="both", expand=True, padx=20)
+        lista_frame.pack(pady=5, padx=100)
 
         encabezado = tk.Frame(lista_frame, bg="#E6F3FF")
         encabezado.pack(fill="x")
 
-        tk.Label(encabezado, text="CÓDIGO", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(side="left")
-        tk.Label(encabezado, text="NOMBRE", font=("Arial", 11, "bold"), width=30, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="CÓDIGO", font=("Arial", 11, "bold"), width=12, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="NOMBRE", font=("Arial", 11, "bold"), width=25, anchor="w", bg="#E6F3FF").pack(side="left")
         tk.Label(encabezado, text="CATEGORÍA", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(side="left")
-        tk.Label(encabezado, text="PRECIO", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="COMPRA", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="VENTA", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(side="left")
         tk.Label(encabezado, text="STOCK", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(side="left")
 
         frame_lista_scroll = tk.Frame(lista_frame, bg="#FFFFFF")
-        frame_lista_scroll.pack(pady=5, fill="both", expand=True)
+        frame_lista_scroll.pack(pady=5)
 
         scroll = tk.Scrollbar(frame_lista_scroll)
         scroll.pack(side="right", fill="y")
 
-        lista_productos = tk.Listbox(frame_lista_scroll, width=100, height=15, font=("Courier New", 10),yscrollcommand=scroll.set)
-        lista_productos.pack(side="left", fill="both", expand=True)
+        lista_productos = tk.Listbox(frame_lista_scroll, width=100, height=10, font=("Courier New", 10),yscrollcommand=scroll.set)
+        lista_productos.pack(side="left")
         scroll.config(command=lista_productos.yview)
+
+        detalle_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        detalle_frame.pack(pady=10, padx=100)
+
+        tk.Label(detalle_frame, text="INFORMACIÓN DETALLADA", font=("Arial", 12, "bold"), bg="#FFFFFF").pack(pady=5)
+
+        campos_detalle = tk.Frame(detalle_frame, bg="#FFFFFF")
+        campos_detalle.pack(pady=10)
+
+        tk.Label(campos_detalle, text="CÓDIGO:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=0, column=0,sticky="w",padx=(0, 10), pady=5)
+        codigo_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        codigo_label.grid(row=0, column=1, sticky="ew", pady=5)
+
+        tk.Label(campos_detalle, text="NOMBRE:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=1, column=0,sticky="w",padx=(0, 10), pady=5)
+        nombre_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        nombre_label.grid(row=1, column=1, sticky="ew", pady=5)
+
+        tk.Label(campos_detalle, text="CATEGORÍA:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=2, column=0,sticky="w",padx=(0, 10), pady=5)
+        categoria_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        categoria_label.grid(row=2, column=1, sticky="ew", pady=5)
+
+        tk.Label(campos_detalle, text="COMPRA:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=3, column=0,sticky="w",padx=(0, 10), pady=5)
+        precio_compra_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        precio_compra_label.grid(row=3, column=1, sticky="ew", pady=5)
+
+        tk.Label(campos_detalle, text="VENTA:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=4, column=0,sticky="w", padx=(0, 10),pady=5)
+        precio_venta_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        precio_venta_label.grid(row=4, column=1, sticky="ew", pady=5)
+
+        tk.Label(campos_detalle, text="STOCK:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=5, column=0,sticky="w", padx=(0, 10),pady=5)
+        stock_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        stock_label.grid(row=5, column=1, sticky="ew", pady=5)
 
         def actualizar_lista(event=None):
             cadena = entry_buscar.get()
@@ -992,39 +1025,150 @@ class App(tk.Tk):
             with ProductosDB._conn() as conn:
                 if cadena:
                     patron = '%' + cadena + '%'
-                    cur = conn.execute(
-                        "SELECT codigo, nombre, categoria, precio_venta, cantidad FROM productos WHERE nombre LIKE ? OR codigo LIKE ? OR categoria LIKE ? ORDER BY nombre",
-                        (patron, patron, patron))
+                    cur = conn.execute("SELECT codigo, nombre, categoria, precio_compra, precio_venta, cantidad FROM productos WHERE nombre LIKE ? OR codigo LIKE ? OR categoria LIKE ? ORDER BY nombre",(patron, patron, patron))
                 else:
-                    cur = conn.execute(
-                        "SELECT codigo, nombre, categoria, precio_venta, cantidad FROM productos ORDER BY nombre")
+                    cur = conn.execute("SELECT codigo, nombre, categoria, precio_compra, precio_venta, cantidad FROM productos ORDER BY nombre")
                 for r in cur.fetchall():
-                    lista_productos.insert(tk.END,f"{r['codigo']:<17} {r['nombre']:<33} {r['categoria']:<17} Q.{r['precio_venta']:<9.2f} {r['cantidad']:<10.2f}")
+                    lista_productos.insert(tk.END,f"{r['codigo']:<13} {r['nombre']:<29} {r['categoria']:<16} Q.{r['precio_compra']:<9.2f} Q.{r['precio_venta']:<9.2f} {r['cantidad']:<8.2f}")
+
+        def mostrar_detalle(event):
+            if not lista_productos.curselection():
+                return
+
+            indice = lista_productos.curselection()[0]
+            seleccion = lista_productos.get(indice)
+            codigo = seleccion[:14].strip()
+
+            with ProductosDB._conn() as conn:
+                cur = conn.execute("SELECT * FROM productos WHERE codigo = ?", (codigo,))
+                producto = cur.fetchone()
+
+                if producto:
+                    codigo_label.config(text=producto['codigo'])
+                    nombre_label.config(text=producto['nombre'])
+                    categoria_label.config(text=producto['categoria'])
+                    precio_compra_label.config(text=f"Q. {producto['precio_compra']:.2f}")
+                    precio_venta_label.config(text=f"Q. {producto['precio_venta']:.2f}")
+                    stock_label.config(text=f"{producto['cantidad']:.2f} unidades")
 
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
+        lista_productos.bind("<<ListboxSelect>>", mostrar_detalle)
         actualizar_lista()
 
     def mostrar_proveedores(self):
         self.activar_boton(self.button_proveedores)
         self.limpiar_panel()
 
-        tk.Label(self.panel_right,text="GESTION DE PROVEEDORES",font=("Arial", 18, "bold"),bg="#FFFFFF").pack(pady=20)
+        tk.Label(self.panel_right, text="GESTION DE PROVEEDORES", font=("Arial", 18, "bold"), bg="#FFFFFF").pack(pady=20)
 
         frame_botones = tk.Frame(self.panel_right, bg="#FFFFFF")
         frame_botones.pack(pady=(0, 15))
 
-        btn_agregar = tk.Button(frame_botones, text="AGREGAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_agregar_proveedor)
+        btn_agregar = tk.Button(frame_botones, text="AGREGAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_agregar_proveedor)
         btn_agregar.grid(row=0, column=0, padx=10)
 
-        btn_editar = tk.Button(frame_botones, text="EDITAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_editar_proveedor)
+        btn_editar = tk.Button(frame_botones, text="EDITAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_editar_proveedor)
         btn_editar.grid(row=0, column=1, padx=10)
 
-        btn_eliminar = tk.Button(frame_botones, text="ELIMINAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25, command=self.mostrar_eliminar_proveedor)
+        btn_eliminar = tk.Button(frame_botones, text="ELIMINAR PROVEEDOR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_eliminar_proveedor)
         btn_eliminar.grid(row=0, column=2, padx=10)
 
         linea = tk.Frame(self.panel_right, bg="gray", height=2)
         linea.pack(fill="x", padx=0, pady=10)
 
+        panel_buscar = tk.Frame(self.panel_right, bg="#FFFFFF")
+        panel_buscar.pack(pady=10)
+
+        tk.Label(panel_buscar, text="Buscar proveedor:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=0,padx=5)
+        entry_buscar = tk.Entry(panel_buscar, width=50, bg="#E6F3FF", font=("Arial", 12))
+        entry_buscar.grid(row=0, column=1, padx=5)
+
+        lista_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        lista_frame.pack(pady=5, padx=100)
+
+        encabezado = tk.Frame(lista_frame, bg="#E6F3FF")
+        encabezado.pack(fill="x")
+
+        tk.Label(encabezado, text="CÓDIGO", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="NOMBRE", font=("Arial", 11, "bold"), width=25, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="TELÉFONO", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="UBICACIÓN", font=("Arial", 11, "bold"), width=20, anchor="w", bg="#E6F3FF").pack(side="left")
+
+        frame_lista_scroll = tk.Frame(lista_frame, bg="#FFFFFF")
+        frame_lista_scroll.pack(pady=5)
+
+        scroll = tk.Scrollbar(frame_lista_scroll)
+        scroll.pack(side="right", fill="y")
+
+        lista_proveedores = tk.Listbox(frame_lista_scroll, width=80, height=10, font=("Courier New", 10),yscrollcommand=scroll.set)
+        lista_proveedores.pack(side="left")
+        scroll.config(command=lista_proveedores.yview)
+
+        detalle_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        detalle_frame.pack(pady=10, padx=100)
+
+        tk.Label(detalle_frame, text="INFORMACIÓN DETALLADA", font=("Arial", 12, "bold"), bg="#FFFFFF").pack(pady=5)
+
+        campos_detalle = tk.Frame(detalle_frame, bg="#FFFFFF")
+        campos_detalle.pack(pady=10)
+
+        tk.Label(campos_detalle, text="CÓDIGO:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=0, column=0,sticky="w",padx=(0, 10), pady=5)
+        codigo_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        codigo_label.grid(row=0, column=1, sticky="ew", pady=5)
+
+        tk.Label(campos_detalle, text="NOMBRE:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=1, column=0,sticky="w",padx=(0, 10), pady=5)
+        nombre_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        nombre_label.grid(row=1, column=1, sticky="ew", pady=5)
+
+        tk.Label(campos_detalle, text="TELÉFONO:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=2, column=0,sticky="w",padx=(0, 10), pady=5)
+        telefono_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        telefono_label.grid(row=2, column=1, sticky="ew", pady=5)
+
+        tk.Label(campos_detalle, text="UBICACIÓN:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=3, column=0,sticky="w",padx=(0, 10), pady=5)
+        ubicacion_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        ubicacion_label.grid(row=3, column=1, sticky="ew", pady=5)
+
+        tk.Label(campos_detalle, text="INFORMACIÓN:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=4, column=0,sticky="w",padx=(0, 10),pady=5)
+        info_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        info_label.grid(row=4, column=1, sticky="ew", pady=5)
+
+        def actualizar_lista(event=None):
+            cadena = entry_buscar.get().strip()
+            lista_proveedores.delete(0, tk.END)
+
+            with ProductosDB._conn() as conn:
+                if cadena:
+                    patron = '%' + cadena + '%'
+                    cur = conn.execute("SELECT codigo, nombre, telefono, ubicacion, informacion FROM proveedores WHERE nombre LIKE ? OR codigo LIKE ? OR telefono LIKE ? ORDER BY nombre",(patron, patron, patron))
+                else:
+                    cur = conn.execute("SELECT codigo, nombre, telefono, ubicacion, informacion FROM proveedores ORDER BY nombre")
+
+                for r in cur.fetchall():
+                    lista_proveedores.insert(tk.END,f"{r['codigo']:<17} {r['nombre']:<28} {r['telefono']:<17} {r['ubicacion']:<20}")
+
+        def mostrar_detalle(event):
+            if not lista_proveedores.curselection():
+                return
+
+            indice = lista_proveedores.curselection()[0]
+            seleccion = lista_proveedores.get(indice)
+            codigo = seleccion[:17].strip()
+
+            with ProductosDB._conn() as conn:
+                cur = conn.execute("SELECT * FROM proveedores WHERE codigo = ?", (codigo,))
+                proveedor = cur.fetchone()
+
+                if proveedor:
+                    codigo_label.config(text=proveedor['codigo'])
+                    nombre_label.config(text=proveedor['nombre'])
+                    telefono_label.config(text=proveedor['telefono'])
+                    ubicacion_label.config(text=proveedor['ubicacion'])
+                    info_label.config(text=proveedor['informacion'])
+
+        entry_buscar.bind("<KeyRelease>", actualizar_lista)
+        lista_proveedores.bind("<<ListboxSelect>>", mostrar_detalle)
+
+        actualizar_lista()
 
     def mostrar_reportes(self):
         self.activar_boton(self.button_reportes)
@@ -2221,7 +2365,7 @@ class AppCajera(tk.Tk):
         self.activar_boton(self.button_inventario)
         self.limpiar_panel()
 
-        tk.Label(self.panel_right, text="CONSULTA DE INVENTARIO", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=20)
+        tk.Label(self.panel_right, text="CONSULTA DE INVENTARIO", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=15)
         tk.Frame(self.panel_right, bg="gray", height=2).pack(fill="x", padx=0, pady=20)
 
         panel_buscar = tk.Frame(self.panel_right, bg="#FFFFFF")
@@ -2232,7 +2376,7 @@ class AppCajera(tk.Tk):
         entry_buscar.grid(row=0, column=1, padx=5)
 
         lista_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
-        lista_frame.pack(pady=5, fill="both", expand=True, padx=20)
+        lista_frame.pack(pady=5, padx=100)
 
         encabezado = tk.Frame(lista_frame, bg="#E6F3FF")
         encabezado.pack(fill="x")
@@ -2244,14 +2388,42 @@ class AppCajera(tk.Tk):
         tk.Label(encabezado, text="STOCK", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(side="left")
 
         frame_lista_scroll = tk.Frame(lista_frame, bg="#FFFFFF")
-        frame_lista_scroll.pack(pady=5, fill="both", expand=True)
+        frame_lista_scroll.pack(pady=5)
 
         scroll = tk.Scrollbar(frame_lista_scroll)
         scroll.pack(side="right", fill="y")
 
-        lista_productos = tk.Listbox(frame_lista_scroll, width=100, height=15, font=("Courier New", 10),yscrollcommand=scroll.set)
-        lista_productos.pack(side="left", fill="both", expand=True)
+        lista_productos = tk.Listbox(frame_lista_scroll, width=100, height=10, font=("Courier New", 10),yscrollcommand=scroll.set)
+        lista_productos.pack(side="left")
         scroll.config(command=lista_productos.yview)
+
+        detalle_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        detalle_frame.pack(pady=10, padx=100)
+
+        tk.Label(detalle_frame, text="INFORMACIÓN DETALLADA", font=("Arial", 12, "bold"), bg="#FFFFFF").pack(pady=5)
+
+        campos_detalle = tk.Frame(detalle_frame, bg="#FFFFFF")
+        campos_detalle.pack(pady=10)
+
+        tk.Label(campos_detalle, text="CÓDIGO:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=0, column=0,sticky="w",padx=(0, 10), pady=5)
+        codigo_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        codigo_label.grid(row=0, column=1, sticky="ew", pady=5)
+
+        tk.Label(campos_detalle, text="NOMBRE:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=1, column=0,sticky="w",padx=(0, 10), pady=5)
+        nombre_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        nombre_label.grid(row=1, column=1, sticky="ew", pady=5)
+
+        tk.Label(campos_detalle, text="CATEGORÍA:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=2, column=0,sticky="w",padx=(0, 10), pady=5)
+        categoria_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        categoria_label.grid(row=2, column=1, sticky="ew", pady=5)
+
+        tk.Label(campos_detalle, text="PRECIO VENTA:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=3, column=0,sticky="w",padx=(0, 10),pady=5)
+        precio_venta_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        precio_venta_label.grid(row=3, column=1, sticky="ew", pady=5)
+
+        tk.Label(campos_detalle, text="STOCK:", font=("Arial", 11, "bold"), bg="#FFFFFF").grid(row=4, column=0,sticky="w", padx=(0, 10),pady=5)
+        stock_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
+        stock_label.grid(row=4, column=1, sticky="ew", pady=5)
 
         def actualizar_lista(event=None):
             cadena = entry_buscar.get()
@@ -2260,19 +2432,34 @@ class AppCajera(tk.Tk):
             with ProductosDB._conn() as conn:
                 if cadena:
                     patron = '%' + cadena + '%'
-                    cur = conn.execute(
-                        "SELECT codigo, nombre, categoria, precio_venta, cantidad FROM productos WHERE nombre LIKE ? OR codigo LIKE ? OR categoria LIKE ? ORDER BY nombre",
-                        (patron, patron, patron)
-                    )
+                    cur = conn.execute("SELECT codigo, nombre, categoria, precio_venta, cantidad FROM productos WHERE nombre LIKE ? OR codigo LIKE ? OR categoria LIKE ? ORDER BY nombre",(patron, patron, patron))
                 else:
-                    cur = conn.execute(
-                        "SELECT codigo, nombre, categoria, precio_venta, cantidad FROM productos ORDER BY nombre")
+                    cur = conn.execute("SELECT codigo, nombre, categoria, precio_venta, cantidad FROM productos ORDER BY nombre")
 
                 for r in cur.fetchall():
-                    lista_productos.insert(tk.END,
-                                           f"{r['codigo']:<17} {r['nombre']:<33} {r['categoria']:<17} Q.{r['precio_venta']:<9.2f} {r['cantidad']:<10.2f}")
+                    lista_productos.insert(tk.END,f"{r['codigo']:<17} {r['nombre']:<33} {r['categoria']:<17} Q.{r['precio_venta']:<9.2f} {r['cantidad']:<10.2f}")
+
+        def mostrar_detalle(event):
+            if not lista_productos.curselection():
+                return
+
+            indice = lista_productos.curselection()[0]
+            seleccion = lista_productos.get(indice)
+            codigo = seleccion[:17].strip()
+
+            with ProductosDB._conn() as conn:
+                cur = conn.execute("SELECT * FROM productos WHERE codigo = ?", (codigo,))
+                producto = cur.fetchone()
+
+                if producto:
+                    codigo_label.config(text=producto['codigo'])
+                    nombre_label.config(text=producto['nombre'])
+                    categoria_label.config(text=producto['categoria'])
+                    precio_venta_label.config(text=f"Q. {producto['precio_venta']:.2f}")
+                    stock_label.config(text=f"{producto['cantidad']:.2f} unidades")
 
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
+        lista_productos.bind("<<ListboxSelect>>", mostrar_detalle)
         actualizar_lista()
 
     def cerrar_sesion(self):
