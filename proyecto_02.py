@@ -2907,6 +2907,7 @@ class AppDeleteDB(tk.Tk):
             "• Todas las ventas\n"
             "• Todas las categorías\n"
             "• Todos los proveedores\n\n"
+            "• Todos los reportes\n\n"  
             "Esta acción no se puede deshacer.\n\n"
             "¿Está seguro de que desea continuar?"
         )
@@ -2949,15 +2950,20 @@ class AppDeleteDB(tk.Tk):
                 cur_proveedores = conn.execute("SELECT COUNT(*) as total FROM proveedores")
                 total_proveedores = cur_proveedores.fetchone()['total']
 
+                cur_reportes = conn.execute("SELECT COUNT(*) as total FROM reportes_novedades")
+                total_reportes = cur_reportes.fetchone()['total']
+
                 conn.execute("DELETE FROM productos")
                 conn.execute("DELETE FROM ventas")
                 conn.execute("DELETE FROM categorias")
                 conn.execute("DELETE FROM proveedores")
+                conn.execute("DELETE FROM reportes_novedades")
 
                 conn.execute("DELETE FROM sqlite_sequence WHERE name='productos'")
                 conn.execute("DELETE FROM sqlite_sequence WHERE name='ventas'")
                 conn.execute("DELETE FROM sqlite_sequence WHERE name='categorias'")
                 conn.execute("DELETE FROM sqlite_sequence WHERE name='proveedores'")
+                conn.execute("DELETE FROM sqlite_sequence WHERE name='reportes_novedades'")
 
                 conn.commit()
 
@@ -2969,6 +2975,7 @@ class AppDeleteDB(tk.Tk):
                 f"• Ventas eliminadas: {total_ventas}\n"
                 f"• Categorías eliminadas: {total_categorias}\n"
                 f"• Proveedores eliminados: {total_proveedores}\n"
+                f"• Reportes eliminados: {total_reportes}\n"
             )
 
         except Exception as e:
