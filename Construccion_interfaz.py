@@ -1221,27 +1221,42 @@ class App(tk.Tk):
         def guardar_producto():
             nombre = entry_nombre.get().strip()
             codigo = entry_codigo.get().strip()
+            precio_compra = entry_precio.get().strip()
+            precio_venta = entry_precio_venta.get().strip()
             categoria = combo_categoria.get().strip()
+            cantidad = entry_cantidad.get().strip()
 
-            if not nombre or not codigo or not categoria or not entry_precio.get() or not entry_precio_venta.get() or not entry_cantidad.get():
-                messagebox.showerror("Error de Validación", "Todos los campos son obligatorios.")
+            if not all([nombre, codigo, precio_compra, precio_venta, categoria, cantidad]):
+                messagebox.showerror("Error", "Todos los campos son obligatorios.")
                 return
             try:
-                precio_compra = float(entry_precio.get().replace('Q.', '').strip())
-                precio_venta = float(entry_precio_venta.get().replace('Q.', '').strip())
-                cantidad = float(entry_cantidad.get().strip())
+                precio_compra_float = float(precio_compra)
+                precio_venta_float = float(precio_venta)
+                cantidad_float = float(cantidad)
             except ValueError:
-                messagebox.showerror("Error de entrada", "Los campos de precio y cantidad deben ser números válidos.")
+                messagebox.showerror("Error de Formato","Los precios y la cantidad deben ser números válidos.")
                 return
-            if precio_compra <= 0:
-                messagebox.showerror("Error de Validación","El precio de compra debe ser un número positivo (mayor a cero).")
+            if precio_compra_float <= 0 or precio_venta_float <= 0 or cantidad_float <= 0:
+                messagebox.showerror("Error de Valor", "Los precios y la cantidad deben ser números **mayores a 0**.")
                 return
-            if precio_venta <= 0:
-                messagebox.showerror("Error de Validación","El precio de venta debe ser un número positivo (mayor a cero).")
-                return
-            if cantidad <= 0:
-                messagebox.showerror("Error de Validación","La cantidad inicial de stock debe ser un número positivo (mayor a cero).")
-                return
+            try:
+                producto = Productos(codigo=codigo, nombre=nombre, precio_compra=precio_compra_float, precio_venta=precio_venta_float, categoria=categoria, cantidad=cantidad_float)
+
+                GuardarProducto.guardar(producto)
+
+                messagebox.showinfo("Éxito", f"Producto '{nombre}' agregado correctamente.")
+                entry_nombre.delete(0, tk.END)
+                entry_codigo.delete(0, tk.END)
+                entry_precio.delete(0, tk.END)
+                entry_precio_venta.delete(0, tk.END)
+                combo_categoria.set('')
+                entry_cantidad.delete(0, tk.END)
+                entry_nombre.focus()
+
+            except sqlite3.IntegrityError:
+                messagebox.showerror("Error de Código", "¡Error! El código ya está registrado. Ingrese uno nuevo.")
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo guardar el producto:\n{str(e)}")
 
             producto = Productos(codigo=codigo, nombre=nombre, precio_venta=precio_venta, precio_compra=precio_compra,categoria=categoria, cantidad=cantidad)
             GuardarProducto.guardar(producto)
