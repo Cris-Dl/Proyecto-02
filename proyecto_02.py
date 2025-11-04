@@ -555,12 +555,12 @@ class App(tk.Tk):
         carrito = tk.Listbox(carrito_frame, width=100, height=6, font=("Courier New", 10))
         carrito.pack()
 
-        subtotal_var = tk.DoubleVar(value=0.0)
+        subtotal_var = tk.DoubleVar(value=0.00)
         frame_total = tk.Frame(self.panel_right, bg="#FFFFFF")
         frame_total.pack(pady=5)
 
-        tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left", padx=(10, 5))
-        tk.Label(frame_total, textvariable=subtotal_var, font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left")
+        tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF", fg="Red").pack(side="left", padx=(10, 5))
+        tk.Label(frame_total, textvariable=subtotal_var, font=("Arial", 12, "bold"), bg="#FFFFFF", fg="Red").pack(side="left")
 
         def actualizar_carrito_display():
             carrito.delete(0, tk.END)
@@ -1505,12 +1505,16 @@ class App(tk.Tk):
                 precio_venta_float = float(precio_venta)
                 cantidad_float = float(cantidad)
             except ValueError:
-                messagebox.showerror("Error de Formato","Los precios y la cantidad deben ser números válidos.")
+                messagebox.showerror("Error de Formato", "Los precios y la cantidad deben ser números válidos.")
                 return
             if precio_compra_float <= 0 or precio_venta_float <= 0 or cantidad_float <= 0:
                 messagebox.showerror("Error de Valor", "Los precios y la cantidad deben ser números **mayores a 0**.")
                 return
+
             try:
+                producto = Productos(codigo=codigo, nombre=nombre, precio_venta=precio_venta_float, precio_compra=precio_compra_float, categoria=categoria, cantidad=cantidad_float)
+                GuardarProducto.guardar(producto)
+                messagebox.showinfo("Éxito", f"Producto '{producto.nombre}' agregado correctamente.")
                 entry_nombre.delete(0, tk.END)
                 entry_codigo.delete(0, tk.END)
                 entry_precio.delete(0, tk.END)
@@ -1524,9 +1528,7 @@ class App(tk.Tk):
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo guardar el producto:\n{str(e)}")
 
-            producto = Productos(codigo=codigo, nombre=nombre, precio_venta=precio_venta, precio_compra=precio_compra,categoria=categoria, cantidad=cantidad)
-            GuardarProducto.guardar(producto)
-            messagebox.showinfo("Éxito", f"Producto '{producto.nombre}' agregado correctamente.")
+
 
         tk.Button(panel_form, text="GUARDAR PRODUCTO", bg=self.COLOR_BOTON, fg="white", font=("Arial", 10, "bold"),relief="flat", cursor="hand2", command=guardar_producto).place(x=200, y=280, width=200, height=35)
 
@@ -2457,6 +2459,8 @@ class AppCajera(tk.Tk):
         tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left", padx=(10, 5))
         tk.Label(frame_total, textvariable=subtotal_var, font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left")
 
+
+
         def actualizar_carrito_display():
             carrito.delete(0, tk.END)
             total = 0
@@ -2667,6 +2671,19 @@ class AppCajera(tk.Tk):
             tk.Button(botones_frame, text="GENERAR FACTURA", bg="#007BFF", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=procesar_factura, width=20).grid(row=0, column=0, padx=10)
 
             tk.Button(botones_frame, text="CANCELAR", bg="#6c757d", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=ventana_factura.destroy, width=15).grid(row=0, column=1, padx=10)
+
+        def agregar_enter(event):
+            actualizar_lista()
+            if lista_productos.size() > 0:
+                lista_productos.selection_clear(0, tk.END)
+                lista_productos.select_set(0)
+                lista_productos.activate(0)
+                agregar_al_carrito()
+                entry_buscar.delete(0, tk.END)
+                actualizar_lista()
+
+        entry_buscar.bind("<Return>", agregar_enter)
+
 
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         lista_productos.bind("<Double-Button-1>", agregar_al_carrito)
