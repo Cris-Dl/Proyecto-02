@@ -135,6 +135,37 @@ class Proveedores:
         else:
             print("El campo no puede estar vacio")
 
+def ordenamiento_burbuja(lista_productos):
+    n = len(lista_productos)
+    for i in range(n):
+        for j in range(0, n - i - 1):
+            if lista_productos[j].nombre > lista_productos[j + 1].nombre:
+                lista_productos[j], lista_productos[j + 1] = lista_productos[j + 1], lista_productos[j]
+    return lista_productos
+
+def ordenamiento_seleccion(lista_productos):
+    n = len(lista_productos)
+    for i in range(n):
+        min_idx = i
+        for j in range(i + 1, n):
+            if lista_productos[j].nombre < lista_productos[min_idx].nombre:
+                min_idx = j
+        lista_productos[i], lista_productos[min_idx] = lista_productos[min_idx], lista_productos[i]
+    return lista_productos
+
+def ordenamiento_rapido(lista_productos):
+    if len(lista_productos) <= 1:
+        return lista_productos
+    pivote = lista_productos[0]
+    menores = []
+    mayores = []
+    for i in range(1, len(lista_productos)):
+        if lista_productos[i].nombre < pivote.nombre:
+            menores.append(lista_productos[i])
+        else:
+            mayores.append(lista_productos[i])
+    return ordenamiento_rapido(menores) + [pivote] + ordenamiento_rapido(mayores)
+
 
 class ProductosDB:
     DB_NAME = "productos.db"
