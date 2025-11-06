@@ -518,12 +518,46 @@ class App(tk.Tk):
         self.button_reportes = tk.Button(self.panel_left, text="REPORTES", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_reportes)
         self.button_reportes.place(x=0, y=430, height=35)
 
+        self.button_acerca_de = tk.Button(self.panel_left, text="ACERCA DE", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_acerca_de)
+        self.button_acerca_de.place(x=0, y=660, height=35)
+
         self.button_close= tk.Button(self.panel_left, text="CERRAR SESIÓN", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25, command=self.cerrar_sesion)
         self.button_close.place(x=0, y=550, height=35)
 
-        self.botones=[self.button_ventas, self.button_buscar_venta, self.button_inventario, self.button_proveedores, self.button_reportes]
-
+        self.botones=[self.button_ventas, self.button_buscar_venta, self.button_inventario, self.button_proveedores, self.button_reportes, self.button_acerca_de]
         self.mostrar_menu_principal()
+
+    def mostrar_acerca_de(self):
+        self.activar_boton(self.button_acerca_de)
+        self.limpiar_panel()
+
+        tk.Label(self.panel_right, text="ACERCA DE - SISTEMA MINIMARKET", font=("Arial", 20, "bold"), bg="#FFFFFF",fg="#007BFF").pack(pady=30)
+
+        tk.Frame(self.panel_right, bg="gray", height=2).pack(fill="x", padx=50, pady=10)
+
+        info_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        info_frame.pack(pady=20, padx=50)
+
+        tk.Label(info_frame, text="Versión: 1.0.0", font=("Arial", 14, "bold"), bg="#FFFFFF").pack(pady=10)
+
+        tk.Label(info_frame, text="Sistema de Gestión para MiniMarket", font=("Arial", 12), bg="#FFFFFF",fg="#666666").pack(pady=5)
+
+        tk.Frame(self.panel_right, bg="gray", height=1).pack(fill="x", padx=50, pady=20)
+
+        tk.Label(self.panel_right, text="DESARROLLADO POR:", font=("Arial", 16, "bold"), bg="#FFFFFF").pack(pady=15)
+
+        dev_frame = tk.Frame(self.panel_right, bg="#E6F3FF", relief="solid", borderwidth=2)
+        dev_frame.pack(pady=10, padx=100, fill="x")
+
+        tk.Label(dev_frame, text="MAYNOR EDUARDO MORALES CHANG", font=("Arial", 13, "bold"), bg="#E6F3FF",pady=10).pack()
+        tk.Label(dev_frame, text="Teléfono: 3570-6701", font=("Arial", 12), bg="#E6F3FF", pady=5).pack()
+
+        tk.Frame(dev_frame, bg="gray", height=1).pack(fill="x", padx=20, pady=10)
+
+        tk.Label(dev_frame, text="CRISTHIAN ESTUARDO DE LEÓN PEREZ", font=("Arial", 13, "bold"), bg="#E6F3FF",pady=10).pack()
+        tk.Label(dev_frame, text="Teléfono: 5080-8254", font=("Arial", 12), bg="#E6F3FF", pady=5).pack(pady=(0, 10))
+
+        tk.Label(self.panel_right, text="© 2025 - Todos los derechos reservados", font=("Arial", 10), bg="#FFFFFF",fg="#999999").pack(pady=30)
 
     def activar_boton(self, boton):
         for b in self.botones:
@@ -2415,12 +2449,48 @@ class AppCajera(tk.Tk):
         self.button_reportes = tk.Button(self.panel_left, text="REPORTES", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_crear_reporte)
         self.button_reportes.place(x=0, y=360, height=35)
 
-        self.button_close = tk.Button(self.panel_left, text="CERRAR SESIÓN", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.cerrar_sesion)
-        self.button_close.place(x=0, y=600, height=35)
+        self.button_acerca_de = tk.Button(self.panel_left, text="ACERCA DE", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_acerca_de)
+        self.button_acerca_de.place(x=0, y=660, height=35)
 
-        self.botones = [self.button_ventas, self.button_inventario, self.button_reportes]
+        self.button_close = tk.Button(self.panel_left, text="CERRAR SESIÓN", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25,command=self.cerrar_sesion)
+        self.button_close.place(x=0, y=550, height=35)
+
+        self.botones = [self.button_ventas, self.button_inventario, self.button_reportes, self.button_acerca_de]
 
         self.mostrar_menu_principal()
+
+    def mostrar_acerca_de(self):
+        self.activar_boton(self.button_acerca_de)
+        self.limpiar_panel()
+
+        tk.Label(self.panel_right, text="ACERCA DE - SISTEMA MINIMARKET", font=("Arial", 20, "bold"), bg="#FFFFFF",fg="#007BFF").pack(pady=30)
+
+        tk.Frame(self.panel_right, bg="gray", height=2).pack(fill="x", padx=50, pady=10)
+
+        info_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
+        info_frame.pack(pady=20, padx=50)
+
+        tk.Label(info_frame, text="Versión: 1.0.0", font=("Arial", 14, "bold"), bg="#FFFFFF").pack(pady=10)
+
+        tk.Label(info_frame, text="Sistema de Gestión para MiniMarket", font=("Arial", 12), bg="#FFFFFF",fg="#666666").pack(pady=5)
+
+        tk.Frame(self.panel_right, bg="gray", height=1).pack(fill="x", padx=50, pady=20)
+
+        tk.Label(self.panel_right, text="DESARROLLADO POR:", font=("Arial", 16, "bold"), bg="#FFFFFF").pack(pady=15)
+
+        dev_frame = tk.Frame(self.panel_right, bg="#E6F3FF", relief="solid", borderwidth=2)
+        dev_frame.pack(pady=10, padx=100, fill="x")
+
+        tk.Label(dev_frame, text="MAYNOR EDUARDO MORALES CHANG", font=("Arial", 13, "bold"), bg="#E6F3FF",pady=10).pack()
+        tk.Label(dev_frame, text="Teléfono: 3570-6701", font=("Arial", 12), bg="#E6F3FF", pady=5).pack()
+
+        tk.Frame(dev_frame, bg="gray", height=1).pack(fill="x", padx=20, pady=10)
+
+        tk.Label(dev_frame, text="CRISTHIAN ESTUARDO DE LEÓN PEREZ", font=("Arial", 13, "bold"), bg="#E6F3FF",pady=10).pack()
+        tk.Label(dev_frame, text="Teléfono: 5080-8254", font=("Arial", 12), bg="#E6F3FF", pady=5).pack(pady=(0, 10))
+
+        tk.Label(self.panel_right, text="© 2025 - Todos los derechos reservados", font=("Arial", 10), bg="#FFFFFF",fg="#999999").pack(pady=30)
+
 
     def activar_boton(self, boton):
         for b in self.botones:
