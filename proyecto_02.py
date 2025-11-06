@@ -625,7 +625,8 @@ class App(tk.Tk):
         frame_total.pack(pady=5)
 
         tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF", fg="Red").pack(side="left", padx=(10, 5))
-        tk.Label(frame_total, textvariable=subtotal_var, font=("Arial", 12, "bold"), bg="#FFFFFF", fg="Red").pack(side="left")
+        label_total = tk.Label(frame_total, text="0.00", font=("Arial", 12, "bold"), bg="#FFFFFF", fg="Red")
+        label_total.pack(side="left")
 
         def actualizar_carrito_display():
             carrito.delete(0, tk.END)
@@ -636,6 +637,7 @@ class App(tk.Tk):
                 carrito.insert(tk.END,
                                f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
             subtotal_var.set(total)
+            label_total.config(text=f"{total:.2f}")
 
         def solicitar_autorizacion():
             if self.auth_eliminar_carrito:
@@ -2557,9 +2559,9 @@ class AppCajera(tk.Tk):
         frame_total = tk.Frame(self.panel_right, bg="#FFFFFF")
         frame_total.pack(pady=5)
 
-        tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left", padx=(10, 5))
-        tk.Label(frame_total, textvariable=subtotal_var, font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left")
-
+        tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF", fg="Red").pack(side="left", padx=(10, 5))
+        label_total = tk.Label(frame_total, text="0.00", font=("Arial", 12, "bold"), bg="#FFFFFF", fg="Red")
+        label_total.pack(side="left")
 
 
         def actualizar_carrito_display():
@@ -2571,6 +2573,7 @@ class AppCajera(tk.Tk):
                 carrito.insert(tk.END,
                                f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
             subtotal_var.set(total)
+            label_total.config(text=f"{total:.2f}")
 
         def solicitar_autorizacion():
             if self.auth_eliminar_carrito:
@@ -2647,13 +2650,7 @@ class AppCajera(tk.Tk):
                     "cantidad": 1
                 })
 
-            carrito.delete(0, tk.END)
-            total = 0
-            for item in self.carrito_items:
-                subtotal = item["cantidad"] * item["precio"]
-                total += subtotal
-                carrito.insert(tk.END,f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
-            subtotal_var.set(total)
+            actualizar_carrito_display()
 
         def vaciar_carrito():
             if not self.carrito_items:
