@@ -167,6 +167,41 @@ def ordenamiento_rapido(lista_productos):
     return ordenamiento_rapido(menores) + [pivote] + ordenamiento_rapido(mayores)
 
 
+def busqueda_secuencial(lista_productos, criterio, valor):
+    resultados = []
+    valor_lower = valor.lower()
+
+    for producto in lista_productos:
+        if criterio == 'nombre' and valor_lower in producto.nombre.lower():
+            resultados.append(producto)
+        elif criterio == 'codigo' and valor_lower in producto.codigo.lower():
+            resultados.append(producto)
+        elif criterio == 'categoria' and valor_lower in producto.categoria.lower():
+            resultados.append(producto)
+
+    return resultados
+
+
+def busqueda_binaria(lista_productos, nombre_buscado):
+    lista_ordenada = ordenamiento_rapido(lista_productos[:])
+
+    izquierda = 0
+    derecha = len(lista_ordenada) - 1
+
+    while izquierda <= derecha:
+        medio = (izquierda + derecha) // 2
+        nombre_medio = lista_ordenada[medio].nombre.lower()
+        nombre_buscar = nombre_buscado.lower()
+
+        if nombre_medio == nombre_buscar:
+            return lista_ordenada[medio]
+        elif nombre_medio < nombre_buscar:
+            izquierda = medio + 1
+        else:
+            derecha = medio - 1
+
+    return None
+
 class ProductosDB:
     DB_NAME = "productos.db"
 
@@ -254,6 +289,67 @@ class Buscar(ProductosDB):
                 (patron, patron, patron)
             )
             return cur.fetchall()
+
+class BusquedaAvanzada(ProductosDB):
+    @staticmethod
+    def busqueda_secuencial_db(criterio: str, valor: str):
+        with ProductosDB._conn() as conn:
+            cur = conn.execute("SELECT * FROM productos")
+            productos_db = cur.fetchall()
+
+            lista_productos = []
+            for p in productos_db:
+                producto = Productos(
+                    codigo=p['codigo'],
+                    nombre=p['nombre'],
+                    precio_venta=p['precio_venta'],
+                    precio_compra=p['precio_compra'],
+                    categoria=p['categoria'],
+                    cantidad=p['cantidad']
+                )
+                lista_productos.append(producto)
+
+            resultados = busqueda_secuencial(lista_productos, criterio, valor)
+
+            return [{
+                'codigo': p.codigo,
+                'nombre': p.nombre,
+                'precio': p.precio_venta,
+                'precio_compra': p.precio_compra,  # AGREGADO
+                'categoria': p.categoria,
+                'cantidad': p.cantidad
+            } for p in resultados]
+
+    @staticmethod
+    def busqueda_binaria_db(nombre: str):
+        with ProductosDB._conn() as conn:
+            cur = conn.execute("SELECT * FROM productos")
+            productos_db = cur.fetchall()
+
+            lista_productos = []
+            for p in productos_db:
+                producto = Productos(
+                    codigo=p['codigo'],
+                    nombre=p['nombre'],
+                    precio_venta=p['precio_venta'],
+                    precio_compra=p['precio_compra'],
+                    categoria=p['categoria'],
+                    cantidad=p['cantidad']
+                )
+                lista_productos.append(producto)
+
+            resultado = busqueda_binaria(lista_productos, nombre)
+
+            if resultado:
+                return {
+                    'codigo': resultado.codigo,
+                    'nombre': resultado.nombre,
+                    'precio': resultado.precio_venta,
+                    'precio_compra': resultado.precio_compra,  # AGREGADO
+                    'categoria': resultado.categoria,
+                    'cantidad': resultado.cantidad
+                }
+            return None
 
 class RegistrarVenta(ProductosDB):
     @staticmethod
@@ -1027,12 +1123,31 @@ class App(tk.Tk):
         panel_buscar = tk.Frame(self.panel_right, bg="#FFFFFF")
         panel_buscar.pack(pady=10)
 
-        tk.Label(panel_buscar, text="Buscar producto:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=0,padx=5)
-        entry_buscar = tk.Entry(panel_buscar, width=50, bg="#E6F3FF", font=("Arial", 12))
+        frame_superior_busqueda = tk.Frame(self.panel_right, bg="#FFFFFF")
+        frame_superior_busqueda.pack(pady=(0, 10), fill="x")
+
+        frame_boton_busqueda = tk.Frame(frame_superior_busqueda, bg="#FFFFFF")
+        frame_boton_busqueda.pack(side="left", padx=(100, 10), anchor="w")
+
+        btn_busqueda_avanzada = tk.Button(frame_boton_busqueda,text="Búsqueda avanzada",bg="#007BFF",fg="white",font=("Arial", 10, "bold"),relief="flat",cursor="hand2",width=18,height=1)
+        btn_busqueda_avanzada.pack()
+
+        panel_buscar = tk.Frame(frame_superior_busqueda, bg="#FFFFFF")
+        panel_buscar.pack(side="left", padx=10, anchor="w")
+
+        tk.Label(panel_buscar,text="Buscar producto:",font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=0, column=0, padx=5)
+
+        entry_buscar = tk.Entry(panel_buscar,width=50,bg="#E6F3FF",font=("Arial", 12))
         entry_buscar.grid(row=0, column=1, padx=5)
 
-        lista_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
-        lista_frame.pack(pady=5, padx=100)
+        contenedor_principal = tk.Frame(self.panel_right, bg="#FFFFFF")
+        contenedor_principal.pack(pady=5, padx=100, fill="both")
+
+        contenedor_lista = tk.Frame(contenedor_principal, bg="#FFFFFF")
+        contenedor_lista.pack(fill="both", expand=True)
+
+        lista_frame = tk.Frame(contenedor_lista, bg="#FFFFFF")
+        lista_frame.pack(side="left", fill="both", expand=True)
 
         encabezado = tk.Frame(lista_frame, bg="#E6F3FF")
         encabezado.pack(fill="x")
@@ -1045,13 +1160,13 @@ class App(tk.Tk):
         tk.Label(encabezado, text="STOCK", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(side="left")
 
         frame_lista_scroll = tk.Frame(lista_frame, bg="#FFFFFF")
-        frame_lista_scroll.pack(pady=5)
+        frame_lista_scroll.pack(fill="both", expand=True, pady=5)
 
         scroll = tk.Scrollbar(frame_lista_scroll)
         scroll.pack(side="right", fill="y")
 
-        lista_productos = tk.Listbox(frame_lista_scroll, width=100, height=10, font=("Courier New", 10),yscrollcommand=scroll.set)
-        lista_productos.pack(side="left")
+        lista_productos = tk.Listbox(frame_lista_scroll, width=90, height=10, font=("Courier New", 10),yscrollcommand=scroll.set)
+        lista_productos.pack(side="left", fill="both", expand=True)
         scroll.config(command=lista_productos.yview)
 
         detalle_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
@@ -1098,6 +1213,7 @@ class App(tk.Tk):
                     cur = conn.execute("SELECT codigo, nombre, categoria, precio_compra, precio_venta, cantidad FROM productos ORDER BY nombre")
                 for r in cur.fetchall():
                     lista_productos.insert(tk.END,f"{r['codigo']:<13} {r['nombre']:<29} {r['categoria']:<16} Q.{float(r['precio_compra']):<9.2f} Q.{float(r['precio_venta']):<9.2f} {float(r['cantidad']):<8.2f}")
+
         def mostrar_detalle(event):
             if not lista_productos.curselection():
                 return
@@ -1117,6 +1233,92 @@ class App(tk.Tk):
                     precio_compra_label.config(text=f"Q. {producto['precio_compra']:.2f}")
                     precio_venta_label.config(text=f"Q. {producto['precio_venta']:.2f}")
                     stock_label.config(text=f"{producto['cantidad']:.2f} unidades")
+
+        def mostrar_resultados_busqueda(resultados, tipo_busqueda):
+            lista_productos.delete(0, tk.END)
+
+            if resultados:
+                for r in resultados:
+                    precio_compra = float(r.get('precio_compra', r.get('precio', 0)))
+                    lista_productos.insert(tk.END,f"{r['codigo']:<13} {r['nombre']:<29} {r['categoria']:<16} Q.{precio_compra:<9.2f} Q.{float(r['precio']):<9.2f} {float(r['cantidad']):<8.2f}")
+
+                messagebox.showinfo("Búsqueda Completa",f"Búsqueda {tipo_busqueda} completada.\n"f"Se encontraron {len(resultados)} resultado(s).")
+            else:
+                messagebox.showwarning("Sin Resultados",f"La búsqueda {tipo_busqueda} no encontró resultados.")
+
+        def abrir_ventana_busqueda():
+            ventana = tk.Toplevel(self)
+            ventana.title("Búsqueda Avanzada")
+            ventana.geometry("500x400")
+            ventana.configure(bg="#FFFFFF")
+            ventana.transient(self)
+            ventana.grab_set()
+
+            ventana.update_idletasks()
+            x = (ventana.winfo_screenwidth() // 2) - (500 // 2)
+            y = (ventana.winfo_screenheight() // 2) - (500 // 2)
+            ventana.geometry(f"500x500+{x}+{y}")
+
+            tk.Label(ventana, text="BÚSQUEDA AVANZADA",font=("Arial", 16, "bold"), bg="#FFFFFF", fg="#007BFF").pack(pady=20)
+
+            tk.Frame(ventana, bg="gray", height=2).pack(fill="x", padx=20, pady=10)
+
+            frame_secuencial = tk.LabelFrame(ventana, text="Búsqueda Secuencial",font=("Arial", 12, "bold"),bg="#FFFFFF", padx=20, pady=15)
+            frame_secuencial.pack(pady=10, padx=20, fill="x")
+
+            tk.Label(frame_secuencial, text="Buscar por:",font=("Arial", 10, "bold"), bg="#FFFFFF").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+            combo_criterio = ttk.Combobox(frame_secuencial,values=["nombre", "codigo", "categoria"],state="readonly", width=15, style='Custom.TCombobox')
+            combo_criterio.current(0)
+            combo_criterio.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+
+            tk.Label(frame_secuencial, text="Valor:",font=("Arial", 10, "bold"), bg="#FFFFFF").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+            entry_valor_sec = tk.Entry(frame_secuencial, width=30, bg="#E6F3FF", font=("Arial", 10))
+            entry_valor_sec.grid(row=1, column=1, padx=5, pady=5)
+            entry_valor_sec.focus()
+
+            def ejecutar_secuencial():
+                criterio = combo_criterio.get()
+                valor = entry_valor_sec.get().strip()
+
+                if not valor:
+                    messagebox.showerror("Error", "Ingrese un valor a buscar", parent=ventana)
+                    return
+
+                resultados = BusquedaAvanzada.busqueda_secuencial_db(criterio, valor)
+                ventana.destroy()
+                mostrar_resultados_busqueda(resultados, "Secuencial")
+
+            tk.Button(frame_secuencial, text="BUSCAR SECUENCIAL", bg=self.COLOR_BOTON,fg="white", font=("Arial", 10, "bold"), relief="flat",cursor="hand2", command=ejecutar_secuencial, width=20).grid(row=2, column=0,columnspan=2, pady=15)
+
+            frame_binaria = tk.LabelFrame(ventana, text="Búsqueda Binaria (Nombre Exacto)",font=("Arial", 12, "bold"),bg="#FFFFFF", padx=20, pady=15)
+            frame_binaria.pack(pady=10, padx=20, fill="x")
+
+            tk.Label(frame_binaria, text="Nombre exacto:",font=("Arial", 10, "bold"), bg="#FFFFFF").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+            entry_nombre_bin = tk.Entry(frame_binaria, width=30, bg="#E6F3FF", font=("Arial", 10))
+            entry_nombre_bin.grid(row=0, column=1, padx=5, pady=5)
+
+            def ejecutar_binaria():
+                nombre = entry_nombre_bin.get().strip()
+
+                if not nombre:
+                    messagebox.showerror("Error", "Ingrese un nombre a buscar", parent=ventana)
+                    return
+
+                resultado = BusquedaAvanzada.busqueda_binaria_db(nombre)
+                ventana.destroy()
+
+                if resultado:
+                    resultados = [resultado]
+                else:
+                    resultados = []
+
+                mostrar_resultados_busqueda(resultados, "Binaria")
+
+            tk.Button(frame_binaria, text="BUSCAR BINARIA", bg=self.COLOR_BOTON,fg="white", font=("Arial", 10, "bold"), relief="flat",cursor="hand2", command=ejecutar_binaria, width=20).grid(row=1, column=0,columnspan=2, pady=15)
+
+            tk.Button(ventana, text="CANCELAR", bg=self.COLOR_BOTON, fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2",command=ventana.destroy, width=15).pack(pady=10)
+
+        btn_busqueda_avanzada.config(command=abrir_ventana_busqueda)
 
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         lista_productos.bind("<<ListboxSelect>>", mostrar_detalle)
@@ -2253,6 +2455,90 @@ class App(tk.Tk):
         btn_eliminar_cat = tk.Button(frame_acciones, text="ELIMINAR CATEGORÍA", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", width=25,command=self.mostrar_eliminar_categoria)
         btn_eliminar_cat.grid(row=0, column=1, padx=10)
 
+    def mostrar_busqueda_avanzada(self):
+        ventana = tk.Toplevel(self)
+        ventana.title("Búsqueda Avanzada")
+        ventana.geometry("600x500")
+        ventana.configure(bg="#FFFFFF")
+        ventana.transient(self)
+        ventana.grab_set()
+
+        tk.Label(ventana, text="BÚSQUEDA AVANZADA", font=("Arial", 16, "bold"), bg="#FFFFFF").pack(pady=20)
+
+        frame_secuencial = tk.LabelFrame(ventana, text="Búsqueda Secuencial", font=("Arial", 12, "bold"), bg="#FFFFFF",padx=20, pady=20)
+        frame_secuencial.pack(pady=10, padx=20, fill="x")
+
+        tk.Label(frame_secuencial, text="Criterio:", font=("Arial", 10), bg="#FFFFFF").grid(row=0, column=0, padx=5,pady=5)
+        combo_criterio = ttk.Combobox(frame_secuencial, values=["nombre", "codigo", "categoria"], state="readonly",width=15)
+        combo_criterio.current(0)
+        combo_criterio.grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Label(frame_secuencial, text="Valor:", font=("Arial", 10), bg="#FFFFFF").grid(row=1, column=0, padx=5,pady=5)
+        entry_valor_sec = tk.Entry(frame_secuencial, width=30, bg="#E6F3FF")
+        entry_valor_sec.grid(row=1, column=1, padx=5, pady=5)
+
+        resultado_sec = tk.Label(frame_secuencial, text="", font=("Arial", 9), bg="#FFFFFF", wraplength=400,justify="left")
+        resultado_sec.grid(row=3, column=0, columnspan=2, pady=10)
+
+        def ejecutar_secuencial():
+            criterio = combo_criterio.get()
+            valor = entry_valor_sec.get().strip()
+
+            if not valor:
+                messagebox.showerror("Error", "Ingrese un valor a buscar")
+                return
+
+            resultados = BusquedaAvanzada.busqueda_secuencial_db(criterio, valor)
+
+            if resultados:
+                texto = f"Se encontraron {len(resultados)} resultado(s):\n\n"
+                for r in resultados[:5]:  # Mostrar máximo 5
+                    texto += f"• {r['nombre']} ({r['codigo']})\n"
+                if len(resultados) > 5:
+                    texto += f"\n... y {len(resultados) - 5} más"
+            else:
+                texto = "No se encontraron resultados"
+
+            resultado_sec.config(text=texto, fg="#28a745" if resultados else "#DC3545")
+
+        tk.Button(frame_secuencial, text="BUSCAR", bg=self.COLOR_BOTON, fg="white", font=("Arial", 10, "bold"),command=ejecutar_secuencial).grid(row=2, column=0, columnspan=2, pady=10)
+
+        frame_binaria = tk.LabelFrame(ventana, text="Búsqueda Binaria (Nombre Exacto)", font=("Arial", 12, "bold"),bg="#FFFFFF", padx=20, pady=20)
+        frame_binaria.pack(pady=10, padx=20, fill="x")
+
+        tk.Label(frame_binaria, text="Nombre exacto:", font=("Arial", 10), bg="#FFFFFF").grid(row=0, column=0, padx=5,pady=5)
+        entry_nombre_bin = tk.Entry(frame_binaria, width=30, bg="#E6F3FF")
+        entry_nombre_bin.grid(row=0, column=1, padx=5, pady=5)
+
+        resultado_bin = tk.Label(frame_binaria, text="", font=("Arial", 9), bg="#FFFFFF", wraplength=400,justify="left")
+        resultado_bin.grid(row=2, column=0, columnspan=2, pady=10)
+
+        def ejecutar_binaria():
+            nombre = entry_nombre_bin.get().strip()
+
+            if not nombre:
+                messagebox.showerror("Error", "Ingrese un nombre a buscar")
+                return
+
+            resultado = BusquedaAvanzada.busqueda_binaria_db(nombre)
+
+            if resultado:
+                texto = (f"✓ Producto encontrado:\n\n"
+                         f"Nombre: {resultado['nombre']}\n"
+                         f"Código: {resultado['codigo']}\n"
+                         f"Categoría: {resultado['categoria']}\n"
+                         f"Precio: Q.{resultado['precio']:.2f}\n"
+                         f"Stock: {resultado['cantidad']:.2f}")
+                color = "#28a745"
+            else:
+                texto = "✗ Producto no encontrado"
+                color = "#DC3545"
+
+            resultado_bin.config(text=texto, fg=color)
+
+        tk.Button(frame_binaria, text="BUSCAR", bg=self.COLOR_BOTON, fg="white", font=("Arial", 10, "bold"),command=ejecutar_binaria).grid(row=1, column=0, columnspan=2, pady=10)
+        tk.Button(ventana, text="CERRAR", bg="#6c757d", fg="white", font=("Arial", 10, "bold"),command=ventana.destroy).pack(pady=20)
+
     def mostrar_crear_categoria(self):
         for widget in self.panel_right.winfo_children():
             if isinstance(widget, tk.Frame) and widget.winfo_y() > 150:
@@ -2807,9 +3093,32 @@ class AppCajera(tk.Tk):
         panel_buscar = tk.Frame(self.panel_right, bg="#FFFFFF")
         panel_buscar.pack(pady=10)
 
+        frame_superior_busqueda = tk.Frame(self.panel_right, bg="#FFFFFF")
+        frame_superior_busqueda.pack(pady=(0, 10), fill="x")
+
+        frame_boton_busqueda = tk.Frame(frame_superior_busqueda, bg="#FFFFFF")
+        frame_boton_busqueda.pack(side="left", padx=(100, 10), anchor="w")
+
+        btn_busqueda_avanzada = tk.Button(frame_boton_busqueda, text="Búsqueda avanzada", bg="#007BFF", fg="white",font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=18, height=1)
+        btn_busqueda_avanzada.pack()
+        btn_busqueda_avanzada.config(command=self.abrir_busqueda_avanzada_cajera)
+
+        panel_buscar = tk.Frame(frame_superior_busqueda, bg="#FFFFFF")
+        panel_buscar.pack(side="left", padx=10, anchor="w")
+
         tk.Label(panel_buscar, text="Buscar producto:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=0,padx=5)
+
         entry_buscar = tk.Entry(panel_buscar, width=50, bg="#E6F3FF", font=("Arial", 12))
         entry_buscar.grid(row=0, column=1, padx=5)
+
+        contenedor_principal = tk.Frame(self.panel_right, bg="#FFFFFF")
+        contenedor_principal.pack(pady=5, padx=100, fill="both")
+
+        contenedor_lista = tk.Frame(contenedor_principal, bg="#FFFFFF")
+        contenedor_lista.pack(fill="both", expand=True)
+
+        lista_frame = tk.Frame(contenedor_lista, bg="#FFFFFF")
+        lista_frame.pack(side="left", fill="both", expand=True)
 
         lista_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
         lista_frame.pack(pady=5, padx=100)
@@ -2894,6 +3203,7 @@ class AppCajera(tk.Tk):
                     precio_venta_label.config(text=f"Q. {producto['precio_venta']:.2f}")
                     stock_label.config(text=f"{producto['cantidad']:.2f} unidades")
 
+
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         lista_productos.bind("<<ListboxSelect>>", mostrar_detalle)
         actualizar_lista()
@@ -2948,6 +3258,111 @@ class AppCajera(tk.Tk):
         tk.Button(frame_botones, text="LIMPIAR",bg="#6c757d", fg="white",font=("Arial", 12, "bold"), relief="flat",cursor="hand2", command=lambda: text_reporte.delete("1.0", tk.END),width=15).grid(row=0, column=1, padx=10)
 
         text_reporte.focus()
+
+    def abrir_busqueda_avanzada_cajera(self):
+        ventana = tk.Toplevel(self)
+        ventana.title("Búsqueda Avanzada")
+        ancho, alto = 500, 500
+        ventana.configure(bg="#FFFFFF")
+        ventana.transient(self)
+        ventana.grab_set()
+
+        ventana.update_idletasks()
+        x = (ventana.winfo_screenwidth() // 2) - (ancho // 2)
+        y = (ventana.winfo_screenheight() // 2) - (alto // 2)
+        ventana.geometry(f"{ancho}x{alto}+{x}+{y}")
+
+        tk.Label(ventana,text="BÚSQUEDA AVANZADA",font=("Arial", 16, "bold"),bg="#FFFFFF",fg="#007BFF").pack(pady=20)
+
+        tk.Frame(ventana, bg="gray", height=2).pack(fill="x", padx=20, pady=10)
+
+        frame_secuencial = tk.LabelFrame(ventana,text="Búsqueda Secuencial",font=("Arial", 12, "bold"),bg="#FFFFFF",padx=20,pady=15)
+        frame_secuencial.pack(pady=6, padx=20, fill="x")
+
+        tk.Label(frame_secuencial, text="Buscar por:", font=("Arial", 10, "bold"), bg="#FFFFFF").grid(row=0, column=0,padx=5, pady=5,sticky="w")
+        combo_criterio = ttk.Combobox(frame_secuencial, values=["nombre", "codigo", "categoria"], state="readonly",width=15)
+        combo_criterio.current(0)
+        combo_criterio.grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Label(frame_secuencial, text="Valor:", font=("Arial", 10, "bold"), bg="#FFFFFF").grid(row=1, column=0,padx=5, pady=5,sticky="w")
+        entry_valor = tk.Entry(frame_secuencial, width=30, bg="#E6F3FF", font=("Arial", 10))
+        entry_valor.grid(row=1, column=1, padx=5, pady=5)
+
+        def ejecutar_busqueda_secuencial():
+            criterio = combo_criterio.get()
+            valor = entry_valor.get().strip()
+            if not valor:
+                messagebox.showerror("Error", "Ingrese un valor para buscar", parent=ventana)
+                return
+
+            with ProductosDB._conn() as conn:
+                cur = conn.execute(f"""
+                    SELECT codigo, nombre, categoria, precio_venta, cantidad
+                    FROM productos
+                    WHERE {criterio} LIKE ?
+                    ORDER BY nombre
+                """, ('%' + valor + '%',))
+                resultados = cur.fetchall()
+
+            ventana.destroy()
+            self.mostrar_resultados_busqueda_cajera(resultados)
+
+        tk.Button(frame_secuencial,text="BUSCAR SECUENCIAL",bg="#007BFF",fg="white",font=("Arial", 10, "bold"),relief="flat",cursor="hand2",width=20,command=ejecutar_busqueda_secuencial).grid(row=2, column=0, columnspan=2, pady=10)
+
+        frame_binaria = tk.LabelFrame(ventana,text="Búsqueda Binaria (Nombre Exacto)",font=("Arial", 12, "bold"),bg="#FFFFFF",padx=20,pady=15)
+        frame_binaria.pack(pady=6, padx=20, fill="x")
+
+        tk.Label(frame_binaria, text="Nombre exacto:", font=("Arial", 10, "bold"), bg="#FFFFFF").grid(row=0, column=0,padx=5, pady=5,sticky="w")
+        entry_nombre = tk.Entry(frame_binaria, width=30, bg="#E6F3FF", font=("Arial", 10))
+        entry_nombre.grid(row=0, column=1, padx=5, pady=5)
+
+        def ejecutar_busqueda_binaria():
+            nombre = entry_nombre.get().strip()
+            if not nombre:
+                messagebox.showerror("Error", "Ingrese un nombre para buscar", parent=ventana)
+                return
+
+            resultado = BusquedaAvanzada.busqueda_binaria_db(nombre)
+            ventana.destroy()
+            if resultado:
+                self.mostrar_resultados_busqueda_cajera([resultado])
+            else:
+                self.mostrar_resultados_busqueda_cajera([])
+
+        tk.Button(frame_binaria,text="BUSCAR BINARIA",bg="#007BFF",fg="white",font=("Arial", 10, "bold"),relief="flat",cursor="hand2",width=20,command=ejecutar_busqueda_binaria).grid(row=1, column=0, columnspan=2, pady=10)
+
+        frame_botones = tk.Frame(ventana, bg="#FFFFFF")
+        frame_botones.pack(pady=12)
+
+        btn_cancelar = tk.Button(frame_botones,text="CANCELAR",bg="#6c757d",fg="white",font=("Arial", 10, "bold"),relief="flat",cursor="hand2",width=15,command=ventana.destroy)
+        btn_cancelar.pack(side="left", padx=8)
+
+    def mostrar_resultados_busqueda_cajera(self, resultados):
+        self.limpiar_panel()
+
+        tk.Label(self.panel_right,text="RESULTADOS DE BÚSQUEDA",font=("Arial", 20, "bold"),bg="#FFFFFF").pack(pady=15)
+
+        encabezado = tk.Frame(self.panel_right, bg="#E6F3FF")
+        encabezado.pack(fill="x", padx=100)
+
+        tk.Label(encabezado, text="CÓDIGO", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="NOMBRE", font=("Arial", 11, "bold"), width=30, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="CATEGORÍA", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="PRECIO VENTA", font=("Arial", 11, "bold"), width=12, anchor="w", bg="#E6F3FF").pack(side="left")
+        tk.Label(encabezado, text="STOCK", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(side="left")
+
+        lista = tk.Listbox(self.panel_right, width=100, height=12, font=("Courier New", 10))
+        lista.pack(padx=100, pady=10)
+
+        if resultados:
+            for r in resultados:
+                lista.insert(
+                    tk.END,
+                    f"{r['codigo']:<17} {r['nombre']:<33} {r['categoria']:<17} Q.{r['precio_venta']:<9.2f} {r['cantidad']:<10.2f}"
+                )
+            messagebox.showinfo("Búsqueda completada", f"Se encontraron {len(resultados)} resultado(s).")
+        else:
+            messagebox.showwarning("Sin resultados", "No se encontraron productos que coincidan.")
 
     def cerrar_sesion(self):
         respuesta = messagebox.askyesno("Confirmación", "¿Está seguro que desea salir?")
