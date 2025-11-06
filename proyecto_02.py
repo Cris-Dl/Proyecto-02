@@ -450,6 +450,7 @@ class ObtenerTodosProductos(ProductosDB):
                 lista_productos_obj.append(producto)
             return lista_productos_obj
 
+
 class ObtenerProveedores(ProductosDB):
     @staticmethod
     def obtener_todos():
@@ -1239,6 +1240,43 @@ class App(tk.Tk):
         stock_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
         stock_label.grid(row=5, column=1, sticky="ew", pady=5)
 
+        def buscar_producto_evento(event=None):
+            valor = entry_buscar.get().strip()
+            if not valor:
+                messagebox.showwarning("Búsqueda", "Ingrese un código, nombre o categoría para buscar.")
+                return
+            with ProductosDB._conn() as conn:
+                cur = conn.execute("""
+                    SELECT codigo, nombre, categoria, precio_compra, precio_venta, cantidad
+                    FROM productos
+                    WHERE codigo LIKE ? OR nombre LIKE ? OR categoria LIKE ?
+                    ORDER BY nombre
+                """, (f"%{valor}%", f"%{valor}%", f"%{valor}%"))
+                resultados = cur.fetchall()
+            lista_productos.delete(0, tk.END)
+            if resultados:
+                for r in resultados:
+                    if not isinstance(r, dict):
+                        r = dict(r)
+                    lista_productos.insert(tk.END,f"{r['codigo']:<13} {r['nombre']:<25} {r['categoria']:<16} "f"Q.{float(r['precio_compra']):<8.2f} Q.{float(r['precio_venta']):<8.2f} {float(r['cantidad']):<8.2f}")
+                if len(resultados) == 1:
+                    unico = resultados[0]
+                    codigo_label.config(text=unico["codigo"])
+                    nombre_label.config(text=unico["nombre"])
+                    categoria_label.config(text=unico["categoria"])
+                    precio_compra_label.config(text=f"Q.{float(unico['precio_compra']):.2f}")
+                    precio_venta_label.config(text=f"Q.{float(unico['precio_venta']):.2f}")
+                    stock_label.config(text=f"{float(unico['cantidad']):.2f}")
+
+            else:
+                messagebox.showwarning("Sin resultados", "No se encontraron productos que coincidan.")
+                codigo_label.config(text="")
+                nombre_label.config(text="")
+                categoria_label.config(text="")
+                precio_compra_label.config(text="")
+                precio_venta_label.config(text="")
+                stock_label.config(text="")
+
         def cargar_inventario_completo():
             try:
                 productos_obj = ObtenerTodosProductos.obtener_todos()
@@ -1442,6 +1480,7 @@ class App(tk.Tk):
 
         btn_busqueda_avanzada.config(command=abrir_ventana_busqueda)
 
+        entry_buscar.bind("<Return>", buscar_producto_evento)
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         lista_productos.bind("<<ListboxSelect>>", mostrar_detalle)
         actualizar_lista()
@@ -2869,6 +2908,20 @@ class AppCajera(tk.Tk):
 
         self.mostrar_menu_principal()
 
+    def aplicar_ordenamiento(self, metodo, funcion_ordenamiento, lista_productos):
+        try:
+            productos_obj = ObtenerTodosProductos.obtener_todos()
+            if not productos_obj:
+                messagebox.showwarning("Aviso", "No hay productos para ordenar.")
+                return
+            lista_ordenada = funcion_ordenamiento(productos_obj)
+            lista_productos.delete(0, tk.END)
+            for p in lista_ordenada:
+                lista_productos.insert(tk.END, f"{p.codigo:<17} {p.nombre:<33} {p.categoria:<17} Q.{float(p.precio_venta):<9.2f} {float(p.cantidad):<10.2f}")
+            messagebox.showinfo("Ordenamiento", f"Productos ordenados usando {metodo}.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Ocurrió un problema al ordenar:\n{e}")
+
     def mostrar_acerca_de(self):
         self.activar_boton(self.button_acerca_de)
         self.limpiar_panel()
@@ -3205,6 +3258,7 @@ class AppCajera(tk.Tk):
         tk.Button(frame_botones_accion, text="Vaciar Carrito", bg="#ffc107", fg="black", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=vaciar_carrito, width=20).grid(row=0, column=2, padx=10)
         actualizar_lista()
 
+
     def mostrar_inventario(self):
         self.activar_boton(self.button_inventario)
         self.limpiar_panel()
@@ -3292,6 +3346,81 @@ class AppCajera(tk.Tk):
         stock_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
         stock_label.grid(row=4, column=1, sticky="ew", pady=5)
 
+        frame_botones_superior = tk.Frame(frame_superior_busqueda, bg="#FFFFFF")
+        frame_botones_superior.pack(side="left", padx=(100, 10), anchor="w")
+
+        btn_ordenar = tk.Menubutton(frame_botones_superior, text="Métodos ordenamiento", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=20, height=1)
+        btn_ordenar.pack()
+
+        menu_ordenar = tk.Menu(btn_ordenar, tearoff=0)
+        btn_ordenar.config(menu=menu_ordenar)
+
+        menu_ordenar.add_command(label="1. Bubble Sort", command=lambda: self.aplicar_ordenamiento("Bubble Sort", ordenamiento_burbuja, lista_productos))
+        menu_ordenar.add_command(label="2. Quick Sort", command=lambda: self.aplicar_ordenamiento("Quick Sort", ordenamiento_rapido, lista_productos))
+        menu_ordenar.add_command(label="3. Selection Sort", command=lambda: self.aplicar_ordenamiento("Selection Sort", ordenamiento_seleccion, lista_productos))
+
+        def buscar_producto_evento(event=None):
+            valor = entry_buscar.get().strip()
+            if not valor:
+                messagebox.showwarning("Búsqueda", "Ingrese un código, nombre o categoría para buscar.")
+                return
+
+            with ProductosDB._conn() as conn:
+                cur = conn.execute("""
+                    SELECT codigo, nombre, categoria, precio_venta, cantidad
+                    FROM productos
+                    WHERE codigo LIKE ? OR nombre LIKE ? OR categoria LIKE ?
+                    ORDER BY nombre
+                """, (f"%{valor}%", f"%{valor}%", f"%{valor}%"))
+                resultados = cur.fetchall()
+
+            lista_productos.delete(0, tk.END)
+            if resultados:
+                for r in resultados:
+                    if not isinstance(r, dict):
+                        r = dict(r)
+                    precio_venta = float(r.get("precio_venta", 0))
+                    lista_productos.insert(tk.END,f"{r['codigo']:<17} {r['nombre']:<33} {r['categoria']:<17} Q.{precio_venta:<9.2f} {float(r['cantidad']):<10.2f}")
+
+                if len(resultados) == 1:
+                    unico = resultados[0]
+                    codigo_label.config(text=unico["codigo"])
+                    nombre_label.config(text=unico["nombre"])
+                    categoria_label.config(text=unico["categoria"])
+                    precio_venta_label.config(text=f"Q.{float(unico['precio_venta']):.2f}")
+                    stock_label.config(text=f"{float(unico['cantidad']):.2f}")
+
+            else:
+                messagebox.showwarning("Sin resultados", "No se encontraron productos que coincidan.")
+                codigo_label.config(text="")
+                nombre_label.config(text="")
+                categoria_label.config(text="")
+                precio_venta_label.config(text="")
+                stock_label.config(text="")
+
+        def on_select(event):
+            seleccion = lista_productos.curselection()
+            if not seleccion:
+                return
+            index = seleccion[0]
+            texto = lista_productos.get(index)
+            codigo = texto[0:17].strip()
+            nombre = texto[18:51].strip()
+            categoria = texto[52:69].strip()
+            try:
+                partes = texto.split("Q.")
+                precio = partes[1].split()[0] if len(partes) > 1 else "0.00"
+                stock = texto.split()[-1]
+            except Exception:
+                precio = "0.00"
+                stock = "0"
+            codigo_label.config(text=codigo)
+            nombre_label.config(text=nombre)
+            categoria_label.config(text=categoria)
+            precio_venta_label.config(text=f"Q.{precio}")
+            stock_label.config(text=stock)
+        lista_productos.bind("<<ListboxSelect>>", on_select)
+
         def actualizar_lista(event=None):
             cadena = entry_buscar.get()
             lista_productos.delete(0, tk.END)
@@ -3325,7 +3454,7 @@ class AppCajera(tk.Tk):
                     precio_venta_label.config(text=f"Q. {producto['precio_venta']:.2f}")
                     stock_label.config(text=f"{producto['cantidad']:.2f} unidades")
 
-
+        entry_buscar.bind("<Return>", buscar_producto_evento)
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         lista_productos.bind("<<ListboxSelect>>", mostrar_detalle)
         actualizar_lista()
@@ -3380,6 +3509,30 @@ class AppCajera(tk.Tk):
         tk.Button(frame_botones, text="LIMPIAR",bg="#6c757d", fg="white",font=("Arial", 12, "bold"), relief="flat",cursor="hand2", command=lambda: text_reporte.delete("1.0", tk.END),width=15).grid(row=0, column=1, padx=10)
 
         text_reporte.focus()
+
+    def mostrar_resultados_busqueda_cajera(self, resultados):
+        def buscar_listbox(widget):
+            if isinstance(widget, tk.Listbox):
+                return widget
+            for hijo in widget.winfo_children():
+                encontrado = buscar_listbox(hijo)
+                if encontrado:
+                    return encontrado
+            return None
+        lista_productos = buscar_listbox(self.panel_right)
+        if not lista_productos:
+            messagebox.showerror("Error", "No se encontró la lista del inventario para actualizar.")
+            return
+        lista_productos.delete(0, tk.END)
+        if resultados:
+            for r in resultados:
+                if not isinstance(r, dict):
+                    r = dict(r)
+                precio_venta = float(r.get('precio_venta', r.get('precio', 0)))
+                lista_productos.insert(tk.END,f"{r['codigo']:<17} {r['nombre']:<33} {r['categoria']:<17} " f"Q.{precio_venta:<9.2f} {float(r['cantidad']):<10.2f}")
+            messagebox.showinfo("Búsqueda completada",f"Se encontraron {len(resultados)} resultado(s).")
+        else:
+            messagebox.showwarning("Sin resultados","No se encontraron productos que coincidan.")
 
     def abrir_busqueda_avanzada_cajera(self):
         ventana = tk.Toplevel(self)
@@ -3459,32 +3612,6 @@ class AppCajera(tk.Tk):
         btn_cancelar = tk.Button(frame_botones,text="CANCELAR",bg="#6c757d",fg="white",font=("Arial", 10, "bold"),relief="flat",cursor="hand2",width=15,command=ventana.destroy)
         btn_cancelar.pack(side="left", padx=8)
 
-    def mostrar_resultados_busqueda_cajera(self, resultados):
-        self.limpiar_panel()
-
-        tk.Label(self.panel_right,text="RESULTADOS DE BÚSQUEDA",font=("Arial", 20, "bold"),bg="#FFFFFF").pack(pady=15)
-
-        encabezado = tk.Frame(self.panel_right, bg="#E6F3FF")
-        encabezado.pack(fill="x", padx=100)
-
-        tk.Label(encabezado, text="CÓDIGO", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(side="left")
-        tk.Label(encabezado, text="NOMBRE", font=("Arial", 11, "bold"), width=30, anchor="w", bg="#E6F3FF").pack(side="left")
-        tk.Label(encabezado, text="CATEGORÍA", font=("Arial", 11, "bold"), width=15, anchor="w", bg="#E6F3FF").pack(side="left")
-        tk.Label(encabezado, text="PRECIO VENTA", font=("Arial", 11, "bold"), width=12, anchor="w", bg="#E6F3FF").pack(side="left")
-        tk.Label(encabezado, text="STOCK", font=("Arial", 11, "bold"), width=10, anchor="w", bg="#E6F3FF").pack(side="left")
-
-        lista = tk.Listbox(self.panel_right, width=100, height=12, font=("Courier New", 10))
-        lista.pack(padx=100, pady=10)
-
-        if resultados:
-            for r in resultados:
-                lista.insert(
-                    tk.END,
-                    f"{r['codigo']:<17} {r['nombre']:<33} {r['categoria']:<17} Q.{r['precio_venta']:<9.2f} {r['cantidad']:<10.2f}"
-                )
-            messagebox.showinfo("Búsqueda completada", f"Se encontraron {len(resultados)} resultado(s).")
-        else:
-            messagebox.showwarning("Sin resultados", "No se encontraron productos que coincidan.")
 
     def cerrar_sesion(self):
         respuesta = messagebox.askyesno("Confirmación", "¿Está seguro que desea salir?")
