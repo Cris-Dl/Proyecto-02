@@ -167,6 +167,20 @@ def ordenamiento_rapido(lista_productos):
     return ordenamiento_rapido(menores) + [pivote] + ordenamiento_rapido(mayores)
 
 
+def ordenamiento_shell(lista_productos):
+    n = len(lista_productos)
+    gap = n // 2
+    while gap > 0:
+        for i in range(gap, n):
+            temp = lista_productos[i]
+            j = i
+            while j >= gap and lista_productos[j - gap].nombre > temp.nombre:
+                lista_productos[j] = lista_productos[j - gap]
+                j -= gap
+            lista_productos[j] = temp
+        gap //= 2
+    return lista_productos
+
 def busqueda_secuencial(lista_productos, criterio, valor):
     resultados = []
     valor_lower = valor.lower()
@@ -178,7 +192,6 @@ def busqueda_secuencial(lista_productos, criterio, valor):
             resultados.append(producto)
         elif criterio == 'categoria' and valor_lower in producto.categoria.lower():
             resultados.append(producto)
-
     return resultados
 
 
@@ -416,6 +429,26 @@ class GuardarProveedor(ProductosDB):
                 (proveedor.nombre, proveedor.codigo, proveedor.telefono, proveedor.ubicacion, proveedor.informacion)
             )
             conn.commit()
+
+class ObtenerTodosProductos(ProductosDB):
+    @staticmethod
+    def obtener_todos():
+        with ProductosDB._conn() as conn:
+            cur = conn.execute("SELECT * FROM productos")
+            productos_db = cur.fetchall()
+
+            lista_productos_obj = []
+            for p in productos_db:
+                producto = Productos(
+                    codigo=p['codigo'],
+                    nombre=p['nombre'],
+                    precio_venta=p['precio_venta'],
+                    precio_compra=p['precio_compra'],
+                    categoria=p['categoria'],
+                    cantidad=p['cantidad']
+                )
+                lista_productos_obj.append(producto)
+            return lista_productos_obj
 
 class ObtenerProveedores(ProductosDB):
     @staticmethod
@@ -671,6 +704,21 @@ class App(tk.Tk):
         for b in self.botones:
             b.config(bg=self.COLOR_BOTON)
 
+    def aplicar_ordenamiento(self, metodo_nombre, metodo_funcion, lista_productos):
+        try:
+            productos_obj = ObtenerTodosProductos.obtener_todos()
+            import time
+            inicio = time.time()
+            lista_ordenada = metodo_funcion(productos_obj)
+            fin = time.time()
+            tiempo_transcurrido = (fin - inicio) * 1000
+            lista_productos.delete(0, tk.END)
+            for p in lista_ordenada:
+                lista_productos.insert(tk.END,f"{p.codigo:<13} {p.nombre:<29} {p.categoria:<16} Q.{float(p.precio_compra):<9.2f} Q.{float(p.precio_venta):<9.2f} {float(p.cantidad):<8.2f}")
+            messagebox.showinfo("Ordenamiento Completado",f"Método: {metodo_nombre}\n\n" f"Productos ordenados: {len(lista_ordenada)}\n" f"Tiempo de ejecución: {tiempo_transcurrido:.2f} ms", parent=self)
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al aplicar ordenamiento:\n{str(e)}", parent=self)
+
     def mostrar_ventas(self):
         self.activar_boton(self.button_ventas)
         self.limpiar_panel()
@@ -702,7 +750,6 @@ class App(tk.Tk):
         lista_productos.pack(side="left")
         scroll.config(command=lista_productos.yview)
 
-
         tk.Label(self.panel_right, text="CARRITO", font=("Arial", 14, "bold"), bg="#FFFFFF").pack(pady=(15, 5))
         carrito_frame = tk.Frame(self.panel_right, bg="#FFFFFF")
         carrito_frame.pack()
@@ -730,8 +777,7 @@ class App(tk.Tk):
             for item in self.carrito_items:
                 subtotal = item["cantidad"] * item["precio"]
                 total += subtotal
-                carrito.insert(tk.END,
-                               f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
+                carrito.insert(tk.END,f"{item['cantidad']:<11} {item['nombre']:<34} Q.{item['precio']:<9.2f} Q.{subtotal:<8.2f}")
             subtotal_var.set(total)
             label_total.config(text=f"{total:.2f}")
 
@@ -801,38 +847,20 @@ class App(tk.Tk):
                     break
             total_solicitado = cantidad_en_carrito + cantidad_a_sumar
             if total_solicitado > stock_disponible:
-                messagebox.showerror(
-                    "Stock Agotado",
-                    f"No se puede agregar más de {producto['nombre']}.\n\n"
-                    f"Límite de stock: {stock_disponible}\n"
-                    f"Actualmente en carrito: {cantidad_en_carrito}"
-                )
+                messagebox.showerror("Stock Agotado",f"No se puede agregar más de {producto['nombre']}.\n\n" f"Límite de stock: {stock_disponible}\n" f"Actualmente en carrito: {cantidad_en_carrito}")
                 return
             if item_existente:
                 item_existente["cantidad"] += cantidad_a_sumar
             else:
-                self.carrito_items.append({
-                    "codigo": producto["codigo"],
-                    "nombre": producto["nombre"],
-                    "precio": float(producto["precio_venta"]),
-                    "cantidad": cantidad_a_sumar
-                })
+                self.carrito_items.append({"codigo": producto["codigo"],"nombre": producto["nombre"],"precio": float(producto["precio_venta"]),"cantidad": cantidad_a_sumar})
             actualizar_carrito_display()
-
         def vaciar_carrito():
             if not self.carrito_items:
                 messagebox.showwarning("Advertencia", "El carrito ya está vacío.")
                 return
-
             if not solicitar_autorizacion():
                 return
-
-            confirmar = messagebox.askyesno(
-                "Confirmar acción",
-                f"¿Está seguro de que desea vaciar el carrito?\n\n"
-                f"Se eliminarán {len(self.carrito_items)} producto(s)."
-            )
-
+            confirmar = messagebox.askyesno("Confirmar acción",f"¿Está seguro de que desea vaciar el carrito?\n\n"f"Se eliminarán {len(self.carrito_items)} producto(s).")
             if confirmar:
                 self.carrito_items.clear()
                 actualizar_carrito_display()
@@ -1126,11 +1154,21 @@ class App(tk.Tk):
         frame_superior_busqueda = tk.Frame(self.panel_right, bg="#FFFFFF")
         frame_superior_busqueda.pack(pady=(0, 10), fill="x")
 
-        frame_boton_busqueda = tk.Frame(frame_superior_busqueda, bg="#FFFFFF")
-        frame_boton_busqueda.pack(side="left", padx=(100, 10), anchor="w")
+        frame_botones_superior = tk.Frame(frame_superior_busqueda, bg="#FFFFFF")
+        frame_botones_superior.pack(side="left", padx=(100, 10), anchor="w")
 
-        btn_busqueda_avanzada = tk.Button(frame_boton_busqueda,text="Búsqueda avanzada",bg="#007BFF",fg="white",font=("Arial", 10, "bold"),relief="flat",cursor="hand2",width=18,height=1)
-        btn_busqueda_avanzada.pack()
+        btn_busqueda_avanzada = tk.Button(frame_botones_superior, text="Búsqueda avanzada", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=18, height=1)
+        btn_busqueda_avanzada.pack(pady=(0, 5))
+
+        btn_ordenar = tk.Menubutton(frame_botones_superior, text="Métodos ordenamiento", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=20, height=1)
+        btn_ordenar.pack()
+
+        menu_ordenar = tk.Menu(btn_ordenar, tearoff=0)
+        btn_ordenar.config(menu=menu_ordenar)
+
+        menu_ordenar.add_command(label="1. Bubble Sort", command=lambda: self.aplicar_ordenamiento("Bubble Sort", ordenamiento_burbuja, lista_productos))
+        menu_ordenar.add_command(label="2. Quick Sort", command=lambda: self.aplicar_ordenamiento("Quick Sort", ordenamiento_rapido, lista_productos))
+        menu_ordenar.add_command(label="3. Selection Sort", command=lambda: self.aplicar_ordenamiento("Selection Sort", ordenamiento_seleccion, lista_productos))
 
         panel_buscar = tk.Frame(frame_superior_busqueda, bg="#FFFFFF")
         panel_buscar.pack(side="left", padx=10, anchor="w")
@@ -1201,10 +1239,94 @@ class App(tk.Tk):
         stock_label = tk.Label(campos_detalle, text="", font=("Arial", 11), bg="#E6F3FF", anchor="w", width=50,relief="flat")
         stock_label.grid(row=5, column=1, sticky="ew", pady=5)
 
+        def cargar_inventario_completo():
+            try:
+                productos_obj = ObtenerTodosProductos.obtener_todos()
+                lista_productos.delete(0, tk.END)
+                for p in productos_obj:
+                    lista_productos.insert(tk.END,f"{p.codigo:<13} {p.nombre:<29} {p.categoria:<16} Q.{float(p.precio_compra):<9.2f} Q.{float(p.precio_venta):<9.2f} {float(p.cantidad):<8.2f}")
+            except Exception as e:
+                messagebox.showerror("Error de Carga", f"No se pudieron cargar los productos: {str(e)}")
+        cargar_inventario_completo()
+
+        def abrir_ventana_ordenamiento():
+            ventana = tk.Toplevel(self)
+            ventana.title("Métodos de Ordenamiento")
+            ventana.geometry("600x500")
+            ventana.configure(bg="#FFFFFF")
+            ventana.transient(self)
+            ventana.grab_set()
+
+            ventana.update_idletasks()
+            x = (ventana.winfo_screenwidth() // 2) - (600 // 2)
+            y = (ventana.winfo_screenheight() // 2) - (500 // 2)
+            ventana.geometry(f"600x500+{x}+{y}")
+
+            tk.Label(ventana, text="MÉTODOS DE ORDENAMIENTO", font=("Arial", 16, "bold"), bg="#FFFFFF", fg="#007BFF").pack(pady=20)
+            tk.Frame(ventana, bg="gray", height=2).pack(fill="x", padx=20, pady=10)
+
+            info_label = tk.Label(ventana, text="Seleccione un método para ordenar el inventario alfabéticamente por nombre:",font=("Arial", 11), bg="#FFFFFF", wraplength=500, justify="center")
+            info_label.pack(pady=10)
+
+            botones_frame = tk.Frame(ventana, bg="#FFFFFF")
+            botones_frame.pack(pady=20, padx=40, fill="both", expand=True)
+
+            def aplicar_ordenamiento(metodo_nombre, metodo_funcion):
+                try:
+                    with ProductosDB._conn() as conn:
+                        cur = conn.execute("SELECT * FROM productos")
+                        productos_db = cur.fetchall()
+                        if not productos_db:
+                            messagebox.showinfo("Información","No hay productos en el inventario para ordenar.", parent=ventana)
+                            return
+                        lista_productos_obj = []
+                        for p in productos_db:
+                            producto = Productos(codigo=p['codigo'], nombre=p['nombre'], precio_venta=p['precio_venta'], precio_compra=p['precio_compra'], categoria=p['categoria'], cantidad=p['cantidad'])
+                            lista_productos_obj.append(producto)
+                        import time
+                        inicio = time.time()
+                        lista_ordenada = metodo_funcion(lista_productos_obj)
+                        fin = time.time()
+                        tiempo_transcurrido = (fin - inicio) * 1000
+                        lista_productos.delete(0, tk.END)
+                        for p in lista_ordenada:
+                            lista_productos.insert(tk.END,f"{p.codigo:<13} {p.nombre:<29} {p.categoria:<16} Q.{float(p.precio_compra):<9.2f} Q.{float(p.precio_venta):<9.2f} {float(p.cantidad):<8.2f}")
+                        ventana.destroy()
+                        messagebox.showinfo("Ordenamiento Completado",f"Método: {metodo_nombre}\n\n" f"Productos ordenados: {len(lista_ordenada)}\n" f"Tiempo de ejecución: {tiempo_transcurrido:.2f} ms")
+                except Exception as e:
+                    messagebox.showerror("Error",f"Error al aplicar ordenamiento:\n{str(e)}", parent=ventana)
+            frame_bubble = tk.LabelFrame(botones_frame, text="Bubble Sort (Burbuja)", font=("Arial", 11, "bold"), bg="#FFFFFF", padx=15, pady=10)
+            frame_bubble.pack(fill="x", pady=5)
+
+            tk.Label(frame_bubble, text="Compara elementos adyacentes repetidamente.\nComplejidad: O(n²)", font=("Arial", 9), bg="#FFFFFF", fg="#666666").pack(pady=5)
+            tk.Button(frame_bubble, text="APLICAR BUBBLE SORT", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", command=lambda: aplicar_ordenamiento("Bubble Sort", ordenamiento_burbuja), width=25).pack(pady=5)
+
+            frame_selection = tk.LabelFrame(botones_frame, text="Selection Sort (Selección)", font=("Arial", 11, "bold"), bg="#FFFFFF", padx=15, pady=10)
+            frame_selection.pack(fill="x", pady=5)
+
+            tk.Label(frame_selection, text="Busca el elemento mínimo y lo coloca al inicio.\nComplejidad: O(n²)", font=("Arial", 9), bg="#FFFFFF", fg="#666666").pack(pady=5)
+            tk.Button(frame_selection, text="APLICAR SELECTION SORT", bg="#007BFF", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", command=lambda: aplicar_ordenamiento("Selection Sort", ordenamiento_seleccion), width=25).pack(pady=5)
+
+            frame_shell = tk.LabelFrame(botones_frame, text="Shell Sort", font=("Arial", 11, "bold"), bg="#FFFFFF", padx=15, pady=10)
+            frame_shell.pack(fill="x", pady=5)
+
+            tk.Label(frame_shell, text="Mejora del insertion sort usando intervalos.\nComplejidad: O(n log n)", font=("Arial", 9), bg="#FFFFFF", fg="#666666").pack(pady=5)
+
+            tk.Button(frame_shell, text="APLICAR SHELL SORT", bg="#28a745", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", command=lambda: aplicar_ordenamiento("Shell Sort", ordenamiento_shell), width=25).pack(pady=5)
+            frame_quick = tk.LabelFrame(botones_frame, text="Quick Sort (Rápido)", font=("Arial", 11, "bold"), bg="#FFFFFF", padx=15, pady=10)
+            frame_quick.pack(fill="x", pady=5)
+
+            tk.Label(frame_quick, text="Divide y conquista usando pivote.\nComplejidad: O(n log n)", font=("Arial", 9), bg="#FFFFFF", fg="#666666").pack(pady=5)
+            tk.Button(frame_quick, text="APLICAR QUICK SORT", bg="#28a745", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", command=lambda: aplicar_ordenamiento("Quick Sort", ordenamiento_rapido), width=25).pack(pady=5)
+
+            frame_bogo = tk.LabelFrame(botones_frame, text="Bogo Sort (Aleatorio)", font=("Arial", 11, "bold"), bg="#FFFFFF", padx=15, pady=10)
+            frame_bogo.pack(fill="x", pady=5)
+
+            tk.Button(ventana, text="CERRAR", bg="#6c757d", fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", command=ventana.destroy, width=15).pack(pady=15)
+
         def actualizar_lista(event=None):
             cadena = entry_buscar.get()
             lista_productos.delete(0, tk.END)
-
             with ProductosDB._conn() as conn:
                 if cadena:
                     patron = '%' + cadena + '%'
@@ -3522,4 +3644,3 @@ if __name__ == "__main__":
     root=tk.Tk()
     app=Login(root)
     root.mainloop()
-
