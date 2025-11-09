@@ -556,7 +556,7 @@ class Login:
         self.COLOR_BLANCO = "#FFFFFF"
         self.COLOR_INPUT = "#E6F3FF"
         self.COLOR_BOTON = "#007BFF"
-
+        self.centrar_ventana(900, 500)
 
         self.panel_left=tk.Frame(self.root, bg=self.COLOR_FONDO, width=400, height=500)
         self.panel_left.pack(side="left", fill="y")
@@ -574,17 +574,25 @@ class Login:
         self.titulo2=tk.Label(self.panel_rigth, text="INICIO DE SESIÓN", font=("Arial", 22,"bold"), bg=self.COLOR_BLANCO, fg="#333333")
         self.titulo2.place(x=130, y=60)
 
-        tk.Label(self.panel_rigth, text="USUARIO", font=("Arial", 10), bg=self.COLOR_BLANCO).place(x=150,y=160)
+        tk.Label(self.panel_rigth, text="USUARIO", font=("Arial", 9,"bold"), bg=self.COLOR_BLANCO).place(x=150,y=160)
         self.entry_user=tk.Entry(self.panel_rigth, width=30, bg=self.COLOR_INPUT,relief="flat", font=("Arial", 10))
         self.entry_user.place(x=150, y=180 , height=30)
 
-        tk.Label(self.panel_rigth, text="CONTRASEÑA", font=("Arial", 10), bg=self.COLOR_BLANCO).place(x=150, y=220)
+        tk.Label(self.panel_rigth, text="CONTRASEÑA", font=("Arial", 9,"bold"), bg=self.COLOR_BLANCO).place(x=150, y=220)
         self.entry_password=tk.Entry(self.panel_rigth, show="*", width=30, bg=self.COLOR_INPUT, relief="flat", font=("Arial", 10))
         self.entry_password.place(x=150, y=240, height=30)
 
         self.boton_login=tk.Button(self.panel_rigth, text="INICIAR SESIÓN", bg=self.COLOR_BOTON, fg="white", font=("Arial", 10, "bold"), relief="flat", cursor="hand2", width=25, command=self.login)
         self.boton_login.place(x=150, y=300, height=35)
 
+    def centrar_ventana(self, ancho, alto):
+        ancho_pantalla = self.root.winfo_screenwidth()
+        alto_pantalla = self.root.winfo_screenheight()
+
+        x = (ancho_pantalla // 2) - (ancho // 2)
+        y = (alto_pantalla // 2) - (alto // 2)
+
+        self.root.geometry(f"{ancho}x{alto}+{x}+{y}")
 
     def login(self):
         user=self.entry_user.get()
@@ -680,11 +688,13 @@ class App(tk.Tk):
         dev_frame.pack(pady=10, padx=100, fill="x")
 
         tk.Label(dev_frame, text="MAYNOR EDUARDO MORALES CHANG", font=("Arial", 13, "bold"), bg="#E6F3FF",pady=10).pack()
+        tk.Label(dev_frame, text="Email: memoralesch@correo.url.edu.gt ", font=("Arial", 12), bg="#E6F3FF", pady=5).pack()
         tk.Label(dev_frame, text="Teléfono: 3570-6701", font=("Arial", 12), bg="#E6F3FF", pady=5).pack()
 
         tk.Frame(dev_frame, bg="gray", height=1).pack(fill="x", padx=20, pady=10)
 
-        tk.Label(dev_frame, text="CRISTHIAN ESTUARDO DE LEÓN PEREZ", font=("Arial", 13, "bold"), bg="#E6F3FF",pady=10).pack()
+        tk.Label(dev_frame, text="CRISTHIAN ESTUARDO DE LEÓN PÉREZ", font=("Arial", 13, "bold"), bg="#E6F3FF",pady=10).pack()
+        tk.Label(dev_frame, text="Email: cedeleonpe@correo.url.edu.gt ", font=("Arial", 12), bg="#E6F3FF",pady=5).pack()
         tk.Label(dev_frame, text="Teléfono: 5080-8254", font=("Arial", 12), bg="#E6F3FF", pady=5).pack(pady=(0, 10))
 
         tk.Label(self.panel_right, text="© 2025 - Todos los derechos reservados", font=("Arial", 10), bg="#FFFFFF",fg="#999999").pack(pady=30)
@@ -921,7 +931,7 @@ class App(tk.Tk):
             entry_nombre = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat",font=("Arial", 11))
             entry_nombre.grid(row=1, column=1, pady=15)
 
-            tk.Label(campos_frame, text="UBICACIÓN:", font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=2, column=0, sticky="e", padx=10, pady=15)
+            tk.Label(campos_frame, text="DIRECCIÓN:", font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=2, column=0, sticky="e", padx=10, pady=15)
             entry_ubicacion = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat",font=("Arial", 11))
             entry_ubicacion.grid(row=2, column=1, pady=15)
 
@@ -1066,13 +1076,12 @@ class App(tk.Tk):
 
         scroll_detalle.config(command=lista_detalle.yview)
 
-        total_var = tk.DoubleVar(value=0.0)
         frame_total = tk.Frame(self.panel_right, bg="#FFFFFF")
         frame_total.pack(pady=5)
 
-        tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left", padx=(10, 5))
-        tk.Label(frame_total, textvariable=total_var, font=("Arial", 12, "bold"), bg="#FFFFFF").pack(side="left")
-
+        tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF", fg="Red").pack(side="left", padx=(10, 5))
+        label_total = tk.Label(frame_total, text="0.00", font=("Arial", 12, "bold"), bg="#FFFFFF", fg="Red")
+        label_total.pack(side="left")
         def actualizar_lista(fecha_buscar="", mes_filtro="Todos"):
             lista_resumen.delete(0, tk.END)
             with ProductosDB._conn() as conn:
@@ -1121,7 +1130,7 @@ class App(tk.Tk):
                         except ValueError:
                             lista_detalle.insert(tk.END, f"ERROR DE FORMATO: {item}")
 
-                    total_var.set(total_venta)
+                    label_total.config(text=f"{total_venta:.2f}")
 
         lista_resumen.bind("<<ListboxSelect>>", mostrar_detalle)
         actualizar_lista("", self.combo_mes_filtro.get())
