@@ -2983,7 +2983,6 @@ class AppCajera(tk.Tk):
     def mostrar_ventas(self):
         self.activar_boton(self.button_ventas)
         self.limpiar_panel()
-        self.auth_eliminar_carrito = False
 
         tk.Label(self.panel_right, text="SECCIÓN DE VENTAS", font=("Arial", 20, "bold"), bg="#FFFFFF").pack(pady=20)
         tk.Frame(self.panel_right, bg="gray", height=2).pack(fill="x", padx=0, pady=20)
@@ -3266,7 +3265,7 @@ class AppCajera(tk.Tk):
 
         tk.Button(frame_botones_accion, text="Vaciar Carrito", bg="#ffc107", fg="black", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=vaciar_carrito, width=20).grid(row=0, column=2, padx=10)
         actualizar_lista()
-
+        actualizar_carrito_display()
 
     def mostrar_inventario(self):
         self.activar_boton(self.button_inventario)
