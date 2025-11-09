@@ -574,11 +574,11 @@ class Login:
         self.titulo2=tk.Label(self.panel_rigth, text="INICIO DE SESIÓN", font=("Arial", 22,"bold"), bg=self.COLOR_BLANCO, fg="#333333")
         self.titulo2.place(x=130, y=60)
 
-        tk.Label(self.panel_rigth, text="USUARIO", font=("Arial", 9,"bold"), bg=self.COLOR_BLANCO).place(x=150,y=160)
+        tk.Label(self.panel_rigth, text="USUARIO:", font=("Arial", 9,"bold"), bg=self.COLOR_BLANCO).place(x=150,y=160)
         self.entry_user=tk.Entry(self.panel_rigth, width=30, bg=self.COLOR_INPUT,relief="flat", font=("Arial", 10))
         self.entry_user.place(x=150, y=180 , height=30)
 
-        tk.Label(self.panel_rigth, text="CONTRASEÑA", font=("Arial", 9,"bold"), bg=self.COLOR_BLANCO).place(x=150, y=220)
+        tk.Label(self.panel_rigth, text="CONTRASEÑA:", font=("Arial", 9,"bold"), bg=self.COLOR_BLANCO).place(x=150, y=220)
         self.entry_password=tk.Entry(self.panel_rigth, show="*", width=30, bg=self.COLOR_INPUT, relief="flat", font=("Arial", 10))
         self.entry_password.place(x=150, y=240, height=30)
 
