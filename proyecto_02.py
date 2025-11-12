@@ -1164,7 +1164,7 @@ class App(tk.Tk):
         panel_filtros = tk.Frame(self.panel_right, bg="#FFFFFF")
         panel_filtros.pack(pady=10)
 
-        tk.Label(panel_filtros, text="Fecha (dd-mm-yyyy):", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0,column=0,padx=5)
+        tk.Label(panel_filtros, text="Buscar (Fecha o NIT):", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0,column=0,padx=5)
         entry_fecha = tk.Entry(panel_filtros, width=20, bg="#E6F3FF", font=("Arial", 12))
         entry_fecha.grid(row=0, column=1, padx=5)
 
@@ -1189,9 +1189,9 @@ class App(tk.Tk):
         encabezado.pack(side="top", fill="x")
 
         tk.Label(encabezado, text="ID", font=("Arial", 11, "bold"), width=9, anchor="w", bg=COLOR_ENCABEZADO).pack(side="left")
-        tk.Label(encabezado, text="FECHA Y HORA", font=("Arial", 11, "bold"), width=35, anchor="w", bg=COLOR_ENCABEZADO).pack(side="left")
-        tk.Label(encabezado, text="TOTAL", font=("Arial", 11, "bold"), width=20, anchor="w", bg=COLOR_ENCABEZADO).pack(side="left")
-
+        tk.Label(encabezado, text="FECHA Y HORA", font=("Arial", 11, "bold"), width=25, anchor="w",bg=COLOR_ENCABEZADO).pack(side="left")
+        tk.Label(encabezado, text="NIT CLIENTE", font=("Arial", 11, "bold"), width=15, anchor="w",bg=COLOR_ENCABEZADO).pack(side="left")
+        tk.Label(encabezado, text="TOTAL", font=("Arial", 11, "bold"), width=15, anchor="w", bg=COLOR_ENCABEZADO).pack(side="left")
         frame_lista_scroll_resumen = tk.Frame(resumen_frame)
         frame_lista_scroll_resumen.pack(side="top")
 
@@ -1230,20 +1230,24 @@ class App(tk.Tk):
         tk.Label(frame_total, text="TOTAL Q.", font=("Arial", 12, "bold"), bg="#FFFFFF", fg="Red").pack(side="left", padx=(10, 5))
         label_total = tk.Label(frame_total, text="0.00", font=("Arial", 12, "bold"), bg="#FFFFFF", fg="Red")
         label_total.pack(side="left")
-        def actualizar_lista(fecha_buscar="", mes_filtro="Todos"):
+
+        def actualizar_lista(busqueda="", mes_filtro="Todos"):
             lista_resumen.delete(0, tk.END)
             with ProductosDB._conn() as conn:
-                query = "SELECT id_venta, fecha_venta, total_venta FROM ventas"
+                query = "SELECT id_venta, fecha_venta, total_venta, nit_cliente FROM ventas"
                 conditions = []
                 params = []
-                if fecha_buscar:
-                    conditions.append("fecha_venta LIKE ?")
-                    params.append('%' + fecha_buscar + '%')
+
+                if busqueda:
+                    conditions.append("(fecha_venta LIKE ? OR nit_cliente LIKE ?)")
+                    params.append('%' + busqueda + '%')
+                    params.append('%' + busqueda + '%')
 
                 if mes_filtro and mes_filtro != "Todos":
                     mes_num = mes_filtro.split('-')[0]
                     conditions.append("SUBSTR(fecha_venta, 4, 2) = ?")
                     params.append(mes_num)
+
                 if conditions:
                     query += " WHERE " + " AND ".join(conditions)
                 query += " ORDER BY fecha_venta DESC LIMIT 50"
@@ -1251,7 +1255,8 @@ class App(tk.Tk):
                 cur = conn.execute(query, tuple(params))
 
                 for v in cur.fetchall():
-                    lista_resumen.insert(tk.END,f"{v['id_venta']:<10} {v['fecha_venta']:<40} Q.{v['total_venta']:<10.2f}")
+                    nit_display = v['nit_cliente'] if v['nit_cliente'] else 'C/F'
+                    lista_resumen.insert(tk.END,f"{v['id_venta']:<10} {v['fecha_venta']:<28} {nit_display:<16} Q.{v['total_venta']:<10.2f}")
 
         def mostrar_detalle(event):
             if not lista_resumen.curselection():
