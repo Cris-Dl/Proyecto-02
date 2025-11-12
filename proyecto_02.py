@@ -237,13 +237,14 @@ class ProductosDB:
             """)
         # 2. Tabla de Ventas
         conn.execute("""
-                CREATE TABLE IF NOT EXISTS ventas (
-                    id_venta INTEGER PRIMARY KEY AUTOINCREMENT,
-                    fecha_venta TEXT NOT NULL,
-                    total_venta REAL NOT NULL,
-                    detalle_productos TEXT 
-                );
-            """)
+            CREATE TABLE IF NOT EXISTS ventas (
+                id_venta INTEGER PRIMARY KEY AUTOINCREMENT,
+                fecha_venta TEXT NOT NULL,
+                total_venta REAL NOT NULL,
+                detalle_productos TEXT,
+                nit_cliente TEXT DEFAULT 'C/F'
+            );
+        """)
         # 3. Tabla de Categorias
         conn.execute("""
                 CREATE TABLE IF NOT EXISTS categorias (
@@ -262,6 +263,16 @@ class ProductosDB:
                     informacion TEXT UNIQUE NOT NULL
                 );
             """)
+
+        # 5. Tabla clientes
+        conn.execute("""
+                        CREATE TABLE IF NOT EXISTS clientes (
+                            id_cliente INTEGER PRIMARY KEY AUTOINCREMENT,
+                            nit TEXT UNIQUE NOT NULL,
+                            nombre TEXT NOT NULL,
+                            direccion TEXT NOT NULL
+                        );
+                    """)
 
         conn.execute("""
                     CREATE TABLE IF NOT EXISTS reportes_novedades (
@@ -366,15 +377,42 @@ class BusquedaAvanzada(ProductosDB):
 
 class RegistrarVenta(ProductosDB):
     @staticmethod
-    def registrar_venta(total: float, detalle_productos: list):
+    def registrar_venta(total: float, detalle_productos: list, nit_cliente: str = "C/F"):
         fecha_actual = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         detalle_str = " | ".join(detalle_productos)
         with ProductosDB._conn() as conn:
             conn.execute(
-                "INSERT INTO ventas (fecha_venta, total_venta, detalle_productos) VALUES (?, ?, ?)",
-                (fecha_actual, total, detalle_str)
+                "INSERT INTO ventas (fecha_venta, total_venta, detalle_productos, nit_cliente) VALUES (?, ?, ?, ?)",
+                (fecha_actual, total, detalle_str, nit_cliente)
             )
             conn.commit()
+
+
+class BuscarVentasPorCliente(ProductosDB):
+    @staticmethod
+    def buscar_por_nit(nit: str):
+        with ProductosDB._conn() as conn:
+            cur = conn.execute("""
+                SELECT v.id_venta, v.fecha_venta, v.total_venta, v.detalle_productos, c.nombre, c.direccion
+                FROM ventas v
+                LEFT JOIN clientes c ON v.nit_cliente = c.nit
+                WHERE v.nit_cliente = ?
+                ORDER BY v.fecha_venta DESC
+            """, (nit,))
+            return cur.fetchall()
+
+    @staticmethod
+    def buscar_por_nombre_cliente(nombre: str):
+        patron = '%' + nombre + '%'
+        with ProductosDB._conn() as conn:
+            cur = conn.execute("""
+                SELECT v.id_venta, v.fecha_venta, v.total_venta, v.detalle_productos, v.nit_cliente, c.nombre, c.direccion
+                FROM ventas v
+                LEFT JOIN clientes c ON v.nit_cliente = c.nit
+                WHERE c.nombre LIKE ?
+                ORDER BY v.fecha_venta DESC
+            """, (patron,))
+            return cur.fetchall()
 
 class ActualizarStock(ProductosDB):
     @staticmethod
@@ -477,6 +515,37 @@ class VerReportes(ProductosDB):
     def ver_reportes():
         with ProductosDB._conn() as conn:
             cur = conn.execute("SELECT id, fecha, reporte FROM reportes_novedades ORDER BY fecha DESC")
+            return cur.fetchall()
+
+class ClientesDB(ProductosDB):
+    @staticmethod
+    def buscar_por_nit(nit: str):
+        with ProductosDB._conn() as conn:
+            cur = conn.execute("SELECT nit, nombre, direccion FROM clientes WHERE nit = ?", (nit,))
+            return cur.fetchone()
+
+    @staticmethod
+    def guardar_cliente(nit: str, nombre: str, direccion: str):
+        with ProductosDB._conn() as conn:
+            try:
+                conn.execute(
+                    "INSERT INTO clientes (nit, nombre, direccion) VALUES (?, ?, ?)",
+                    (nit, nombre, direccion)
+                )
+                conn.commit()
+                return True
+            except sqlite3.IntegrityError:
+                conn.execute(
+                    "UPDATE clientes SET nombre = ?, direccion = ? WHERE nit = ?",
+                    (nombre, direccion, nit)
+                )
+                conn.commit()
+                return True
+
+    @staticmethod
+    def obtener_todos_clientes():
+        with ProductosDB._conn() as conn:
+            cur = conn.execute("SELECT nit, nombre, direccion FROM clientes ORDER BY nombre")
             return cur.fetchall()
 
 class GeneradorFacturas:
@@ -912,19 +981,24 @@ class App(tk.Tk):
             if not self.carrito_items:
                 messagebox.showerror("Error", "El carrito está vacío.")
                 return
+
+            try:
+                ClientesDB.guardar_cliente("C/F", "Consumidor Final", "Ciudad")
+            except:
+                pass
+
             total = subtotal_var.get()
             detalle = [f"{i['cantidad']} x {i['nombre']} @Q.{i['precio']}" for i in self.carrito_items]
-            RegistrarVenta.registrar_venta(total, detalle)
+            RegistrarVenta.registrar_venta(total, detalle, "C/F")
 
             for item in self.carrito_items:
                 ActualizarStock.actualizar_stock(item['codigo'], item['cantidad'])
 
-            messagebox.showinfo("Éxito", f"Venta registrada y stock actualizado. Total: Q.{total:.2f}")
+            messagebox.showinfo("Éxito",f"✓ Venta registrada (Cliente: C/F)\n✓ Stock actualizado\n\nTotal: Q.{total:.2f}")
             self.carrito_items.clear()
             actualizar_carrito_display()
             carrito.delete(0, tk.END)
             subtotal_var.set(0.0)
-            self.carrito_items.clear()
 
             self.auth_eliminar_carrito = False
 
@@ -946,25 +1020,49 @@ class App(tk.Tk):
             y = (ventana_factura.winfo_screenheight() // 2) - (400 // 2)
             ventana_factura.geometry(f"500x400+{x}+{y}")
 
-            tk.Label(ventana_factura, text="DATOS DEL CLIENTE", font=("Arial", 18, "bold"),bg="#FFFFFF", fg="#007BFF").pack(pady=20)
+            tk.Label(ventana_factura, text="DATOS DEL CLIENTE", font=("Arial", 18, "bold"), bg="#FFFFFF",fg="#007BFF").pack(pady=20)
 
             tk.Frame(ventana_factura, bg="gray", height=2).pack(fill="x", padx=20, pady=10)
 
             campos_frame = tk.Frame(ventana_factura, bg="#FFFFFF")
             campos_frame.pack(pady=20, padx=40)
 
-            tk.Label(campos_frame, text="NIT:", font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=0, column=0, sticky="e", padx=10, pady=15)
-            entry_nit = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat",font=("Arial", 11))
+            tk.Label(campos_frame, text="NIT:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=0,sticky="e", padx=10,pady=15)
+            entry_nit = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat", font=("Arial", 11))
             entry_nit.grid(row=0, column=1, pady=15)
             entry_nit.focus()
 
-            tk.Label(campos_frame, text="NOMBRE:", font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=1, column=0, sticky="e", padx=10, pady=15)
-            entry_nombre = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat",font=("Arial", 11))
+            tk.Label(campos_frame, text="NOMBRE:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=1, column=0,sticky="e", padx=10,pady=15)
+            entry_nombre = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat", font=("Arial", 11))
             entry_nombre.grid(row=1, column=1, pady=15)
 
-            tk.Label(campos_frame, text="DIRECCIÓN:", font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=2, column=0, sticky="e", padx=10, pady=15)
-            entry_ubicacion = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat",font=("Arial", 11))
-            entry_ubicacion.grid(row=2, column=1, pady=15)
+            tk.Label(campos_frame, text="DIRECCIÓN:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=2, column=0,sticky="e",padx=10, pady=15)
+            entry_direccion = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat", font=("Arial", 11))
+            entry_direccion.grid(row=2, column=1, pady=15)
+
+            def autocompletar_cliente(event=None):
+                nit = entry_nit.get().strip()
+                if len(nit) >= 3:
+                    cliente = ClientesDB.buscar_por_nit(nit)
+                    if cliente:
+                        entry_nombre.delete(0, tk.END)
+                        entry_nombre.insert(0, cliente['nombre'])
+                        entry_direccion.delete(0, tk.END)
+                        entry_direccion.insert(0, cliente['direccion'])
+                        entry_nombre.config(bg="#E6F3FF")
+                        entry_direccion.config(bg="#E6F3FF")
+                    else:
+                        entry_nombre.delete(0, tk.END)
+                        entry_direccion.delete(0, tk.END)
+                        entry_nombre.config(bg="#E6F3FF")
+                        entry_direccion.config(bg="#E6F3FF")
+                else:
+                    entry_nombre.delete(0, tk.END)
+                    entry_direccion.delete(0, tk.END)
+                    entry_nombre.config(bg="#E6F3FF")
+                    entry_direccion.config(bg="#E6F3FF")
+
+            entry_nit.bind("<KeyRelease>", autocompletar_cliente)
 
             botones_frame = tk.Frame(ventana_factura, bg="#FFFFFF")
             botones_frame.pack(pady=20)
@@ -972,21 +1070,37 @@ class App(tk.Tk):
             def procesar_factura():
                 nit = entry_nit.get().strip()
                 nombre = entry_nombre.get().strip()
-                ubicacion = entry_ubicacion.get().strip()
+                direccion = entry_direccion.get().strip()
 
-                if not nit or not nombre or not ubicacion:
-                    messagebox.showerror("Error", "Todos los campos son obligatorios.",parent=ventana_factura)
+                if not nit or not nombre or not direccion:
+                    messagebox.showerror("Error", "Todos los campos son obligatorios.", parent=ventana_factura)
                     return
 
                 try:
+                    ClientesDB.guardar_cliente(nit, nombre, direccion)
+
                     total = subtotal_var.get()
-                    archivo_pdf = GeneradorFacturas.generar_factura_pdf(self.carrito_items,total,nit,nombre,ubicacion)
+                    archivo_pdf = GeneradorFacturas.generar_factura_pdf(self.carrito_items, total, nit, nombre,direccion)
+
+                    detalle = [f"{i['cantidad']} x {i['nombre']} @Q.{i['precio']}" for i in self.carrito_items]
+                    RegistrarVenta.registrar_venta(total, detalle, nit)
+
+                    for item in self.carrito_items:
+                        ActualizarStock.actualizar_stock(item['codigo'], item['cantidad'])
 
                     ventana_factura.destroy()
 
+                    self.carrito_items.clear()
+                    actualizar_carrito_display()
+                    self.auth_eliminar_carrito = False
+
                     respuesta = messagebox.askyesno(
-                        "Factura Generada",
-                        f"Factura generada exitosamente:\n\n{archivo_pdf}\n\n"
+                        "Venta Completada",
+                        f"✓ Venta registrada correctamente\n"
+                        f"✓ Factura generada: {archivo_pdf}\n"
+                        f"✓ Cliente guardado: {nombre}\n"
+                        f"✓ Stock actualizado\n\n"
+                        f"Total: Q.{total:.2f}\n\n"
                         f"¿Desea abrir la factura ahora?"
                     )
 
@@ -1002,11 +1116,11 @@ class App(tk.Tk):
                             subprocess.call(['xdg-open', archivo_pdf])
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Error al generar la factura:\n{str(e)}",parent=ventana_factura)
+                    messagebox.showerror("Error", f"Error al procesar la venta:\n{str(e)}", parent=ventana_factura)
 
-            tk.Button(botones_frame, text="GENERAR FACTURA", bg="#007BFF", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=procesar_factura, width=20).grid(row=0, column=0, padx=10)
+            tk.Button(botones_frame, text="GENERAR FACTURA", bg="#007BFF", fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=procesar_factura, width=20).grid(row=0, column=0, padx=10)
 
-            tk.Button(botones_frame, text="CANCELAR", bg="#6c757d", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=ventana_factura.destroy, width=15).grid(row=0, column=1, padx=10)
+            tk.Button(botones_frame, text="CANCELAR", bg="#6c757d", fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=ventana_factura.destroy, width=15).grid(row=0, column=1,padx=10)
 
         def agregar_enter(event):
             actualizar_lista()
@@ -3224,22 +3338,29 @@ class AppCajera(tk.Tk):
                 actualizar_carrito_display()
                 messagebox.showinfo("Éxito", "El carrito ha sido vaciado.")
 
-
         def finalizar_venta():
             if not self.carrito_items:
                 messagebox.showerror("Error", "El carrito está vacío.")
                 return
-            detalle = [f"{i['cantidad']} x {i['nombre']} @Q.{i['precio']}" for i in self.carrito_items]
+
+            try:
+                ClientesDB.guardar_cliente("C/F", "Consumidor Final", "Ciudad")
+            except:
+                pass
+
             total = subtotal_var.get()
-            RegistrarVenta.registrar_venta(total, detalle)
+            detalle = [f"{i['cantidad']} x {i['nombre']} @Q.{i['precio']}" for i in self.carrito_items]
+            RegistrarVenta.registrar_venta(total, detalle, "C/F")
 
             for item in self.carrito_items:
                 ActualizarStock.actualizar_stock(item['codigo'], item['cantidad'])
 
-            messagebox.showinfo("Éxito", f"Venta registrada correctamente. Total: Q.{total:.2f}")
+            messagebox.showinfo("Éxito",f"✓ Venta registrada (Cliente: C/F)\n✓ Stock actualizado\n\nTotal: Q.{total:.2f}")
+            self.carrito_items.clear()
+            actualizar_carrito_display()
             carrito.delete(0, tk.END)
             subtotal_var.set(0.0)
-            self.carrito_items.clear()
+
             self.auth_eliminar_carrito = False
 
         def generar_factura():
@@ -3260,25 +3381,49 @@ class AppCajera(tk.Tk):
             y = (ventana_factura.winfo_screenheight() // 2) - (400 // 2)
             ventana_factura.geometry(f"500x400+{x}+{y}")
 
-            tk.Label(ventana_factura, text="DATOS DEL CLIENTE", font=("Arial", 18, "bold"),bg="#FFFFFF", fg="#007BFF").pack(pady=20)
+            tk.Label(ventana_factura, text="DATOS DEL CLIENTE", font=("Arial", 18, "bold"), bg="#FFFFFF",fg="#007BFF").pack(pady=20)
 
             tk.Frame(ventana_factura, bg="gray", height=2).pack(fill="x", padx=20, pady=10)
 
             campos_frame = tk.Frame(ventana_factura, bg="#FFFFFF")
             campos_frame.pack(pady=20, padx=40)
 
-            tk.Label(campos_frame, text="NIT:", font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=0, column=0, sticky="e", padx=10, pady=15)
-            entry_nit = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat",font=("Arial", 11))
+            tk.Label(campos_frame, text="NIT:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=0, column=0,sticky="e", padx=10,pady=15)
+            entry_nit = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat", font=("Arial", 11))
             entry_nit.grid(row=0, column=1, pady=15)
             entry_nit.focus()
 
-            tk.Label(campos_frame, text="NOMBRE:", font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=1, column=0, sticky="e", padx=10, pady=15)
-            entry_nombre = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat",font=("Arial", 11))
+            tk.Label(campos_frame, text="NOMBRE:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=1, column=0,sticky="e", padx=10,pady=15)
+            entry_nombre = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat", font=("Arial", 11))
             entry_nombre.grid(row=1, column=1, pady=15)
 
-            tk.Label(campos_frame, text="UBICACIÓN:", font=("Arial", 12, "bold"),bg="#FFFFFF").grid(row=2, column=0, sticky="e", padx=10, pady=15)
-            entry_ubicacion = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat",font=("Arial", 11))
-            entry_ubicacion.grid(row=2, column=1, pady=15)
+            tk.Label(campos_frame, text="DIRECCIÓN:", font=("Arial", 12, "bold"), bg="#FFFFFF").grid(row=2, column=0,sticky="e",padx=10, pady=15)
+            entry_direccion = tk.Entry(campos_frame, width=30, bg="#E6F3FF", relief="flat", font=("Arial", 11))
+            entry_direccion.grid(row=2, column=1, pady=15)
+
+            def autocompletar_cliente(event=None):
+                nit = entry_nit.get().strip()
+                if len(nit) >= 3:
+                    cliente = ClientesDB.buscar_por_nit(nit)
+                    if cliente:
+                        entry_nombre.delete(0, tk.END)
+                        entry_nombre.insert(0, cliente['nombre'])
+                        entry_direccion.delete(0, tk.END)
+                        entry_direccion.insert(0, cliente['direccion'])
+                        entry_nombre.config(bg="#E6F3FF")
+                        entry_direccion.config(bg="#E6F3FF")
+                    else:
+                        entry_nombre.delete(0, tk.END)
+                        entry_direccion.delete(0, tk.END)
+                        entry_nombre.config(bg="#E6F3FF")
+                        entry_direccion.config(bg="#E6F3FF")
+                else:
+                    entry_nombre.delete(0, tk.END)
+                    entry_direccion.delete(0, tk.END)
+                    entry_nombre.config(bg="#E6F3FF")
+                    entry_direccion.config(bg="#E6F3FF")
+
+            entry_nit.bind("<KeyRelease>", autocompletar_cliente)
 
             botones_frame = tk.Frame(ventana_factura, bg="#FFFFFF")
             botones_frame.pack(pady=20)
@@ -3286,22 +3431,37 @@ class AppCajera(tk.Tk):
             def procesar_factura():
                 nit = entry_nit.get().strip()
                 nombre = entry_nombre.get().strip()
-                ubicacion = entry_ubicacion.get().strip()
+                direccion = entry_direccion.get().strip()
 
-                if not nit or not nombre or not ubicacion:
-                    messagebox.showerror("Error", "Todos los campos son obligatorios.",
-                                         parent=ventana_factura)
+                if not nit or not nombre or not direccion:
+                    messagebox.showerror("Error", "Todos los campos son obligatorios.",parent=ventana_factura)
                     return
 
                 try:
+                    ClientesDB.guardar_cliente(nit, nombre, direccion)
+
                     total = subtotal_var.get()
-                    archivo_pdf = GeneradorFacturas.generar_factura_pdf(self.carrito_items,total,nit,nombre,ubicacion)
+                    archivo_pdf = GeneradorFacturas.generar_factura_pdf(self.carrito_items, total, nit, nombre, direccion)
+
+                    detalle = [f"{i['cantidad']} x {i['nombre']} @Q.{i['precio']}" for i in self.carrito_items]
+                    RegistrarVenta.registrar_venta(total, detalle, nit)
+
+                    for item in self.carrito_items:
+                        ActualizarStock.actualizar_stock(item['codigo'], item['cantidad'])
 
                     ventana_factura.destroy()
 
+                    self.carrito_items.clear()
+                    actualizar_carrito_display()
+                    self.auth_eliminar_carrito = False
+
                     respuesta = messagebox.askyesno(
-                        "Factura Generada",
-                        f"Factura generada exitosamente:\n\n{archivo_pdf}\n\n"
+                        "Venta Completada",
+                        f"✓ Venta registrada correctamente\n"
+                        f"✓ Factura generada: {archivo_pdf}\n"
+                        f"✓ Cliente guardado: {nombre}\n"
+                        f"✓ Stock actualizado\n\n"
+                        f"Total: Q.{total:.2f}\n\n"
                         f"¿Desea abrir la factura ahora?"
                     )
 
@@ -3317,11 +3477,11 @@ class AppCajera(tk.Tk):
                             subprocess.call(['xdg-open', archivo_pdf])
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Error al generar la factura:\n{str(e)}",parent=ventana_factura)
+                    messagebox.showerror("Error", f"Error al procesar la venta:\n{str(e)}",parent=ventana_factura)
 
-            tk.Button(botones_frame, text="GENERAR FACTURA", bg="#007BFF", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=procesar_factura, width=20).grid(row=0, column=0, padx=10)
+            tk.Button(botones_frame, text="GENERAR FACTURA", bg="#007BFF", fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=procesar_factura, width=20).grid(row=0, column=0, padx=10)
 
-            tk.Button(botones_frame, text="CANCELAR", bg="#6c757d", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=ventana_factura.destroy, width=15).grid(row=0, column=1, padx=10)
+            tk.Button(botones_frame, text="CANCELAR", bg="#6c757d", fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=ventana_factura.destroy, width=15).grid(row=0, column=1,padx=10)
 
         def agregar_enter(event):
             actualizar_lista()
