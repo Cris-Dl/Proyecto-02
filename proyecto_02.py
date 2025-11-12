@@ -807,6 +807,37 @@ class App(tk.Tk):
 
             return False
 
+        def modificar_cantidad_carrito(event=None):
+            if not carrito.curselection():
+                messagebox.showwarning("Advertencia", "Seleccione un producto del carrito para modificar su cantidad.")
+                return
+            indice = int(carrito.curselection()[0])
+            if indice >= len(self.carrito_items):
+                return
+            item_seleccionado = self.carrito_items[indice]
+            producto = ObtenerCodigo.obtener_por_codigo(item_seleccionado["codigo"])
+            if not producto:
+                messagebox.showerror("Error", "No se encontró el producto en la base de datos.")
+                return
+            stock_disponible = producto["cantidad"]
+            cantidad_actual = item_seleccionado["cantidad"]
+            nueva_cantidad_str = simpledialog.askstring("Modificar Cantidad",f"Producto: {item_seleccionado['nombre']}\n" f"Cantidad actual: {cantidad_actual}\n" f"Stock disponible: {stock_disponible}\n\n" f"Ingrese la nueva cantidad:")
+            if nueva_cantidad_str is None:
+                return
+            try:
+                nueva_cantidad = float(nueva_cantidad_str)
+                if nueva_cantidad <= 0:
+                    messagebox.showerror("Error", "La cantidad debe ser mayor a 0.")
+                    return
+                if nueva_cantidad > stock_disponible:
+                    messagebox.showerror("Stock Insuficiente",f"No hay suficiente stock disponible.\n\n" f"Stock disponible: {stock_disponible}\n" f"Cantidad solicitada: {nueva_cantidad}")
+                    return
+                item_seleccionado["cantidad"] = int(nueva_cantidad)
+                actualizar_carrito_display()
+                messagebox.showinfo("Éxito", f"Cantidad actualizada a {int(nueva_cantidad)} unidades.")
+            except ValueError:
+                messagebox.showerror("Error", "Ingrese un número válido.")
+
         def eliminar_uno_del_carrito(event=None):
             if not carrito.curselection():
                 return
@@ -991,6 +1022,9 @@ class App(tk.Tk):
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         lista_productos.bind("<Double-Button-1>", agregar_al_carrito)
         carrito.bind("<Double-Button-1>", eliminar_uno_del_carrito)
+        carrito.bind("<Button-3>", modificar_cantidad_carrito)
+        carrito.bind("<m>", modificar_cantidad_carrito)
+        carrito.bind("<M>", modificar_cantidad_carrito)
 
         frame_botones_accion = tk.Frame(self.panel_right, bg="#FFFFFF")
         frame_botones_accion.pack(pady=10)
@@ -1000,9 +1034,9 @@ class App(tk.Tk):
         tk.Button(frame_botones_accion, text="Generar Factura", bg="#28a745", fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=generar_factura, width=20).grid(row=0, column=0, padx=10)
 
         tk.Button(frame_botones_accion, text="Vaciar Carrito", bg="#ffc107", fg="black", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=vaciar_carrito, width=20).grid(row=0, column=2, padx=10)
+        tk.Button(frame_botones_accion, text="Modificar Cantidad", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=modificar_cantidad_carrito, width=20).grid(row=0, column=3, padx=10)
         actualizar_lista()
         actualizar_carrito_display()
-
 
     def mostrar_buscar_venta(self):
         self.activar_boton(self.button_buscar_venta)
@@ -3079,6 +3113,37 @@ class AppCajera(tk.Tk):
 
             return False
 
+        def modificar_cantidad_carrito(event=None):
+            if not carrito.curselection():
+                messagebox.showwarning("Advertencia", "Seleccione un producto del carrito para modificar su cantidad.")
+                return
+            indice = int(carrito.curselection()[0])
+            if indice >= len(self.carrito_items):
+                return
+            item_seleccionado = self.carrito_items[indice]
+            producto = ObtenerCodigo.obtener_por_codigo(item_seleccionado["codigo"])
+            if not producto:
+                messagebox.showerror("Error", "No se encontró el producto en la base de datos.")
+                return
+            stock_disponible = producto["cantidad"]
+            cantidad_actual = item_seleccionado["cantidad"]
+            nueva_cantidad_str = simpledialog.askstring("Modificar Cantidad",f"Producto: {item_seleccionado['nombre']}\n" f"Cantidad actual: {cantidad_actual}\n" f"Stock disponible: {stock_disponible}\n\n" f"Ingrese la nueva cantidad:")
+            if nueva_cantidad_str is None:
+                return
+            try:
+                nueva_cantidad = float(nueva_cantidad_str)
+                if nueva_cantidad <= 0:
+                    messagebox.showerror("Error", "La cantidad debe ser mayor a 0.")
+                    return
+                if nueva_cantidad > stock_disponible:
+                    messagebox.showerror("Stock Insuficiente",f"No hay suficiente stock disponible.\n\n" f"Stock disponible: {stock_disponible}\n" f"Cantidad solicitada: {nueva_cantidad}")
+                    return
+                item_seleccionado["cantidad"] = int(nueva_cantidad)
+                actualizar_carrito_display()
+                messagebox.showinfo("Éxito", f"Cantidad actualizada a {int(nueva_cantidad)} unidades.")
+            except ValueError:
+                messagebox.showerror("Error", "Ingrese un número válido.")
+
         def eliminar_uno_del_carrito(event=None):
             if not carrito.curselection():
                 return
@@ -3270,20 +3335,19 @@ class AppCajera(tk.Tk):
                 actualizar_lista()
 
         entry_buscar.bind("<Return>", agregar_enter)
-
-
         entry_buscar.bind("<KeyRelease>", actualizar_lista)
         lista_productos.bind("<Double-Button-1>", agregar_al_carrito)
         carrito.bind("<Double-Button-1>", eliminar_uno_del_carrito)
+        carrito.bind("<Button-3>", modificar_cantidad_carrito)
+        carrito.bind("<m>", modificar_cantidad_carrito)
+        carrito.bind("<M>", modificar_cantidad_carrito)
 
         frame_botones_accion = tk.Frame(self.panel_right, bg="#FFFFFF")
         frame_botones_accion.pack(pady=10)
-
         tk.Button(frame_botones_accion, text="Finalizar Venta", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2", command=finalizar_venta, width=20).grid(row=0, column=1, padx=10)
-
         tk.Button(frame_botones_accion, text="Generar Factura", bg="#28a745", fg="white", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=generar_factura, width=20).grid(row=0, column=0, padx=10)
-
         tk.Button(frame_botones_accion, text="Vaciar Carrito", bg="#ffc107", fg="black", font=("Arial", 12, "bold"),relief="flat", cursor="hand2", command=vaciar_carrito, width=20).grid(row=0, column=2, padx=10)
+        tk.Button(frame_botones_accion, text="Modificar Cantidad", bg=self.COLOR_BOTON, fg="white",font=("Arial", 12, "bold"), relief="flat", cursor="hand2",command=modificar_cantidad_carrito, width=20).grid(row=0, column=3, padx=10)
         actualizar_lista()
         actualizar_carrito_display()
 
