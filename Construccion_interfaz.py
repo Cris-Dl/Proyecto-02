@@ -2407,6 +2407,25 @@ class AppCajera(tk.Tk):
         self.limpiar_panel()
         tk.Label(self.panel_right, text="MENÚ PRINCIPAL - CAJERA", font=("Arial", 22, "bold"), bg="#FFFFFF").pack(pady=50)
         tk.Label(self.panel_right, text="¡Bienvenido al MiniMarket!", font=("Arial", 16), bg="#FFFFFF").pack(pady=20)
+
+        frame_ofertas = tk.Frame(self.panel_right, bg="#FFFFFF")
+        frame_ofertas.pack(pady=20)
+
+        try:
+            imagen_ofertas = tk.PhotoImage(file="ofertas.png")
+            self.imagen_ofertas = imagen_ofertas
+
+            imagen_ofertas2 = tk.PhotoImage(file="oferta2.png")
+            self.imagen_ofertas2 = imagen_ofertas2
+
+            label_ofertas = tk.Label(frame_ofertas, image=imagen_ofertas, bg="#FFFFFF",cursor="hand2", relief="raised", borderwidth=2)
+            label_ofertas.pack(side="left", padx=10)
+
+            label_ofertas = tk.Label(frame_ofertas, image=imagen_ofertas2, bg="#FFFFFF", cursor="hand2", relief="raised",borderwidth=2)
+            label_ofertas.pack(side="left", padx=10)
+
+        except Exception as e:
+            tk.Label(frame_ofertas, text="Imagen de ofertas no disponible",font=("Arial", 12), bg="#FFE6E6", fg="#DC3545",padx=20, pady=10).pack()
         for b in self.botones:
             b.config(bg=self.COLOR_BOTON)
 
