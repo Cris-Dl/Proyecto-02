@@ -548,6 +548,18 @@ class ClientesDB(ProductosDB):
             cur = conn.execute("SELECT nit, nombre, direccion FROM clientes ORDER BY nombre")
             return cur.fetchall()
 
+    @staticmethod
+    def asegurar_cliente_cf():
+        with ProductosDB._conn() as conn:
+            try:
+                conn.execute(
+                    "INSERT OR IGNORE INTO clientes (nit, nombre, direccion) VALUES (?, ?, ?)",
+                    ("C/F", "Consumidor Final", "Ciudad")
+                )
+                conn.commit()
+            except:
+                pass
+
 class GeneradorFacturas:
     @staticmethod
     def generar_factura_pdf(carrito, total, nit, nombre, direccion):
@@ -698,6 +710,7 @@ class App(tk.Tk):
         configurar_estilo_combobox()
         self.carrito_items = []
         self.auth_eliminar_carrito = False
+        ClientesDB.asegurar_cliente_cf()
 
         self.panel_left = tk.Frame(self, bg="#1E90FF", width=200, height=500)
         self.panel_left.pack(side="left", fill="y")
@@ -3040,6 +3053,7 @@ class AppCajera(tk.Tk):
         self.state('zoomed')
         self.carrito_items = []
         self.auth_eliminar_carrito = False
+        ClientesDB.asegurar_cliente_cf()
 
         self.panel_left = tk.Frame(self, bg="#1E90FF", width=200, height=500)
         self.panel_left.pack(side="left", fill="y")
