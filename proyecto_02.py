@@ -1705,7 +1705,6 @@ class App(tk.Tk):
         scroll = tk.Scrollbar(frame_lista_scroll)
         scroll.pack(side="right", fill="y")
 
-
         lista_proveedores = tk.Listbox(frame_lista_scroll, width=80, height=10, font=("Courier New", 10),yscrollcommand=scroll.set)
         lista_proveedores.pack(side="left")
         scroll.config(command=lista_proveedores.yview)
